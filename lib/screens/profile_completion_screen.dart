@@ -1,0 +1,394 @@
+import 'package:flutter/material.dart';
+import '../theme/app_colors.dart';
+
+class ProfileCompletionScreen extends StatefulWidget {
+  const ProfileCompletionScreen({super.key});
+
+  @override
+  State<ProfileCompletionScreen> createState() =>
+      _ProfileCompletionScreenState();
+}
+
+class _ProfileCompletionScreenState extends State<ProfileCompletionScreen>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
+
+  late TextEditingController _firstNameController;
+  late TextEditingController _middleNameController;
+  late TextEditingController _lastNameController;
+  late TextEditingController _birthdayController;
+  late TextEditingController _addressController;
+
+  String? _selectedSex;
+  String? _selectedGradeLevel;
+
+  final List<String> _sexOptions = ['Male', 'Female'];
+  final List<String> _gradeLevels = ['Grade 11', 'Grade 12'];
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeAnimations();
+    _firstNameController = TextEditingController();
+    _middleNameController = TextEditingController();
+    _lastNameController = TextEditingController();
+    _birthdayController = TextEditingController();
+    _addressController = TextEditingController();
+  }
+
+  void _initializeAnimations() {
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+
+    _fadeAnimation = Tween<double>(begin: 0, end: 1).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeIn),
+    );
+
+    _slideAnimation =
+        Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero).animate(
+          CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
+        );
+
+    _animationController.forward();
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    _firstNameController.dispose();
+    _middleNameController.dispose();
+    _lastNameController.dispose();
+    _birthdayController.dispose();
+    _addressController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _selectDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime(2010),
+      firstDate: DateTime(2000),
+      lastDate: DateTime.now(),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.dark(
+              primary: AppColors.primary,
+              onPrimary: Colors.black,
+              surface: Color(0xFF1A1F2E),
+              onSurface: Colors.white,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (picked != null) {
+      setState(() {
+        _birthdayController.text =
+            "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      extendBodyBehindAppBar: true,
+      appBar: _buildAppBar(),
+      body: Container(
+        decoration: _buildGradientDecoration(),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Expanded(
+              child: Center(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: FadeTransition(
+                    opacity: _fadeAnimation,
+                    child: SlideTransition(
+                      position: _slideAnimation,
+                      child: _buildFloatingContainer(context),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.only(left: 24, right: 24, bottom: 16),
+              child: Text(
+                "Developed By: Carl Dindo L. Cejas & Joshua Jhon Juariza",
+                style: TextStyle(fontSize: 8, color: Colors.grey[600]),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  AppBar _buildAppBar() {
+    return AppBar(
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      centerTitle: true,
+      toolbarHeight: 60,
+      title: Padding(
+        padding: const EdgeInsets.only(top: 10),
+        child: Image.asset(
+          'logos/name.png',
+          height: 200,
+          width: 200,
+          fit: BoxFit.contain,
+        ),
+      ),
+      leading: Padding(
+        padding: const EdgeInsets.only(top: 10),
+        child: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
+    );
+  }
+
+  BoxDecoration _buildGradientDecoration() {
+    return BoxDecoration(
+      gradient: RadialGradient(
+        radius: 1,
+        colors: [const Color(0xFF00365D), Colors.black],
+      ),
+    );
+  }
+
+  Widget _buildFloatingContainer(BuildContext context) {
+    return Container(
+      constraints: const BoxConstraints(maxWidth: 350, maxHeight: 650),
+      margin: EdgeInsets.only(top: 55),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1A1F2E),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: const Color(0xFF2D3748), width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.4),
+            blurRadius: 16,
+            offset: const Offset(0, 8),
+          ),
+          BoxShadow(
+            color: AppColors.primary.withOpacity(0.1),
+            blurRadius: 20,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(28),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: _buildFormContent(context),
+      ),
+    );
+  }
+
+  List<Widget> _buildFormContent(BuildContext context) {
+    return [
+      _buildHeaderText(),
+      const SizedBox(height: 20),
+      _buildFirstNameField(),
+      const SizedBox(height: 10),
+      _buildMiddleNameField(),
+      const SizedBox(height: 10),
+      _buildLastNameField(),
+      const SizedBox(height: 10),
+      _buildBirthdayField(),
+      const SizedBox(height: 10),
+      _buildSexDropdown(),
+      const SizedBox(height: 10),
+      _buildAddressField(),
+      const SizedBox(height: 10),
+      _buildGradeLevelDropdown(),
+      const SizedBox(height: 25),
+      _buildCompleteButton(context),
+    ];
+  }
+
+  Widget _buildHeaderText() {
+    return const Text(
+      "Complete Your Profile",
+      style: TextStyle(
+        fontSize: 28,
+        fontWeight: FontWeight.bold,
+        color: Colors.white,
+        letterSpacing: 0.5,
+      ),
+    );
+  }
+
+  Widget _buildFirstNameField() {
+    return TextFormField(
+      controller: _firstNameController,
+      decoration: const InputDecoration(
+        prefixIcon: Icon(Icons.person_outline),
+        hintText: 'First Name',
+      ),
+    );
+  }
+
+  Widget _buildMiddleNameField() {
+    return TextFormField(
+      controller: _middleNameController,
+      decoration: const InputDecoration(
+        prefixIcon: Icon(Icons.person_outline),
+        hintText: 'Middle Name',
+      ),
+    );
+  }
+
+  Widget _buildLastNameField() {
+    return TextFormField(
+      controller: _lastNameController,
+      decoration: const InputDecoration(
+        prefixIcon: Icon(Icons.person_outline),
+        hintText: 'Last Name',
+      ),
+    );
+  }
+
+  Widget _buildBirthdayField() {
+    return TextFormField(
+      controller: _birthdayController,
+      readOnly: true,
+      decoration: InputDecoration(
+        prefixIcon: const Icon(Icons.calendar_today_outlined),
+        hintText: 'Birthday',
+        suffixIcon: IconButton(
+          icon: const Icon(Icons.date_range),
+          onPressed: () => _selectDate(context),
+        ),
+      ),
+      onTap: () => _selectDate(context),
+    );
+  }
+
+  Widget _buildSexDropdown() {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFF2D3748), width: 1),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Row(
+          children: [
+            const Icon(Icons.wc, color: AppColors.textSecondary),
+            const SizedBox(width: 12),
+            Expanded(
+              child: DropdownButton<String>(
+                value: _selectedSex,
+                hint: const Text(
+                  'Sex',
+                  style: TextStyle(color: AppColors.textSecondary),
+                ),
+                isExpanded: true,
+                underline: const SizedBox(),
+                items: _sexOptions.map((String value) {
+                  return DropdownMenuItem<String>(
+                    value: value,
+                    child: Text(value),
+                  );
+                }).toList(),
+                onChanged: (String? newValue) {
+                  setState(() {
+                    _selectedSex = newValue;
+                  });
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAddressField() {
+    return TextFormField(
+      controller: _addressController,
+      decoration: const InputDecoration(
+        prefixIcon: Icon(Icons.location_on_outlined),
+        hintText: 'Address',
+      ),
+      maxLines: 1,
+    );
+  }
+
+  Widget _buildGradeLevelDropdown() {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFF2D3748), width: 1),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Row(
+          children: [
+            const Icon(Icons.school_outlined, color: AppColors.textSecondary),
+            const SizedBox(width: 12),
+            Expanded(
+              child: DropdownButton<String>(
+                value: _selectedGradeLevel,
+                hint: const Text(
+                  'Grade Level',
+                  style: TextStyle(color: AppColors.textSecondary),
+                ),
+                isExpanded: true,
+                underline: const SizedBox(),
+                items: _gradeLevels.map((String value) {
+                  return DropdownMenuItem<String>(
+                    value: value,
+                    child: Text(value),
+                  );
+                }).toList(),
+                onChanged: (String? newValue) {
+                  setState(() {
+                    _selectedGradeLevel = newValue;
+                  });
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCompleteButton(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton(
+        onPressed: _isFormValid() ? () => _completeProfile(context) : null,
+        child: const Text("Complete Profile"),
+      ),
+    );
+  }
+
+  bool _isFormValid() {
+    return _firstNameController.text.isNotEmpty &&
+        _lastNameController.text.isNotEmpty &&
+        _birthdayController.text.isNotEmpty &&
+        _selectedSex != null &&
+        _addressController.text.isNotEmpty &&
+        _selectedGradeLevel != null;
+  }
+
+  void _completeProfile(BuildContext context) {
+    Navigator.pushNamed(context, '/home');
+  }
+}
