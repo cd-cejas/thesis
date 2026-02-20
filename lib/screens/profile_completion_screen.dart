@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../theme/app_colors.dart';
 
 class ProfileCompletionScreen extends StatefulWidget {
@@ -26,6 +28,10 @@ class _ProfileCompletionScreenState extends State<ProfileCompletionScreen>
 
   final List<String> _sexOptions = ['Male', 'Female'];
   final List<String> _gradeLevels = ['Grade 11', 'Grade 12'];
+  bool _isLoading = false;
+  String? _errorMessage;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   @override
   void initState() {
@@ -200,6 +206,21 @@ class _ProfileCompletionScreenState extends State<ProfileCompletionScreen>
     return [
       _buildHeaderText(),
       const SizedBox(height: 20),
+      if (_errorMessage != null) ...[
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.red.withOpacity(0.1),
+            border: Border.all(color: Colors.red.withOpacity(0.5)),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Text(
+            _errorMessage!,
+            style: const TextStyle(color: Colors.red, fontSize: 12),
+          ),
+        ),
+        const SizedBox(height: 16),
+      ],
       _buildFirstNameField(),
       const SizedBox(height: 10),
       _buildMiddleNameField(),
@@ -373,8 +394,21 @@ class _ProfileCompletionScreenState extends State<ProfileCompletionScreen>
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton(
-        onPressed: _isFormValid() ? () => _completeProfile(context) : null,
-        child: const Text("Complete Profile"),
+        onPressed: _isLoading || !_isFormValid()
+            ? null
+            : () => _completeProfile(context),
+        child: _isLoading
+            ? SizedBox(
+                height: 20,
+                width: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    Colors.black.withOpacity(0.7),
+                  ),
+                ),
+              )
+            : const Text("Complete Profile"),
       ),
     );
   }
@@ -388,7 +422,45 @@ class _ProfileCompletionScreenState extends State<ProfileCompletionScreen>
         _selectedGradeLevel != null;
   }
 
-  void _completeProfile(BuildContext context) {
-    Navigator.pushNamed(context, '/home');
+  Future<void> _completeProfile(BuildContext context) async {
+    if (!_isFormValid()) return;
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final user = _auth.currentUser;
+      if (user == null) {
+        setState(() {
+          _errorMessage = 'User not authenticated';
+          _isLoading = false;
+        });
+        return;
+      }
+
+      await _firestore.collection('users').doc(user.uid).set({
+        'email': user.email,
+        'firstName': _firstNameController.text.trim(),
+        'middleName': _middleNameController.text.trim(),
+        'lastName': _lastNameController.text.trim(),
+        'birthday': _birthdayController.text.trim(),
+        'sex': _selectedSex,
+        'address': _addressController.text.trim(),
+        'gradeLevel': _selectedGradeLevel,
+        'createdAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+
+      if (mounted) {
+        Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
+      }
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'Error saving profile: ${e.toString()}';
+        _isLoading = false;
+      });
+    }
   }
 }

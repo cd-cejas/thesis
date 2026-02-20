@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../theme/app_colors.dart';
 
 class OtpScreen extends StatefulWidget {
@@ -17,6 +18,11 @@ class _OtpScreenState extends State<OtpScreen>
 
   late List<TextEditingController> _otpControllers;
   late List<FocusNode> _otpFocusNodes;
+  bool _isLoading = false;
+  String? _errorMessage;
+  String? _verificationId;
+  int? _resendToken;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
 
   @override
   void initState() {
@@ -166,6 +172,21 @@ class _OtpScreenState extends State<OtpScreen>
       const SizedBox(height: 15),
       _buildSubtitleText(),
       const SizedBox(height: 35),
+      if (_errorMessage != null) ...[
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.red.withOpacity(0.1),
+            border: Border.all(color: Colors.red.withOpacity(0.5)),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Text(
+            _errorMessage!,
+            style: const TextStyle(color: Colors.red, fontSize: 12),
+          ),
+        ),
+        const SizedBox(height: 16),
+      ],
       _buildOtpFields(),
       const SizedBox(height: 32),
       _buildVerifyButton(context),
@@ -245,10 +266,80 @@ class _OtpScreenState extends State<OtpScreen>
     return SizedBox(
       width: 300,
       child: ElevatedButton(
-        onPressed: () => Navigator.pushNamed(context, '/profile_completion'),
-        child: const Text("Verify & Continue"),
+        onPressed: _isLoading ? null : () => _verifyOtp(context),
+        child: _isLoading
+            ? SizedBox(
+                height: 20,
+                width: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    Colors.black.withOpacity(0.7),
+                  ),
+                ),
+              )
+            : const Text("Verify & Continue"),
       ),
     );
+  }
+
+  Future<void> _verifyOtp(BuildContext context) async {
+    final otp = _otpControllers.map((controller) => controller.text).join();
+
+    if (otp.length != 6) {
+      setState(() {
+        _errorMessage = 'Please enter all 6 digits';
+      });
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      if (_verificationId != null) {
+        final credential = PhoneAuthProvider.credential(
+          verificationId: _verificationId!,
+          smsCode: otp,
+        );
+        await _auth.signInWithCredential(credential);
+      }
+
+      if (mounted) {
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          '/profile_completion',
+          (route) => false,
+        );
+      }
+    } on FirebaseAuthException catch (e) {
+      setState(() {
+        _errorMessage = 'Invalid OTP. Please try again';
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _resendOtp() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      // This would resend the OTP - implement based on your backend
+      setState(() {
+        _errorMessage = null;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'Error resending OTP';
+        _isLoading = false;
+      });
+    }
   }
 
   Widget _buildResendOtpLink() {
@@ -260,7 +351,7 @@ class _OtpScreenState extends State<OtpScreen>
           style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
         ),
         GestureDetector(
-          onTap: () {},
+          onTap: _isLoading ? null : _resendOtp,
           child: const Text(
             "Resend OTP",
             style: TextStyle(

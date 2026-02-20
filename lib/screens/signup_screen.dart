@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../theme/app_colors.dart';
 import '../widgets/social_buttons.dart';
 import '../widgets/terms_modal.dart';
@@ -19,6 +20,14 @@ class _SignupScreenState extends State<SignupScreen>
 
   bool _agreeToTerms = false;
   bool _isObscure = true;
+  bool _isLoading = false;
+  String? _errorMessage;
+
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
+  final FirebaseAuth _auth = FirebaseAuth.instance;
 
   @override
   void initState() {
@@ -47,7 +56,89 @@ class _SignupScreenState extends State<SignupScreen>
   @override
   void dispose() {
     _animationController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
     super.dispose();
+  }
+
+  Future<void> _signup() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final email = _emailController.text.trim();
+      final password = _passwordController.text;
+      final confirmPassword = _confirmPasswordController.text;
+
+      if (email.isEmpty || password.isEmpty || confirmPassword.isEmpty) {
+        setState(() {
+          _errorMessage = 'Please fill in all fields';
+          _isLoading = false;
+        });
+        return;
+      }
+
+      if (password != confirmPassword) {
+        setState(() {
+          _errorMessage = 'Passwords do not match';
+          _isLoading = false;
+        });
+        return;
+      }
+
+      if (password.length < 6) {
+        setState(() {
+          _errorMessage = 'Password must be at least 6 characters';
+          _isLoading = false;
+        });
+        return;
+      }
+
+      if (!_agreeToTerms) {
+        setState(() {
+          _errorMessage = 'Please agree to the Terms of Service';
+          _isLoading = false;
+        });
+        return;
+      }
+
+      await _auth.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      if (mounted) {
+        Navigator.pushNamedAndRemoveUntil(context, '/profile_completion', (route) => false);
+      }
+    } on FirebaseAuthException catch (e) {
+      setState(() {
+        _errorMessage = _getErrorMessage(e.code);
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'An unexpected error occurred';
+        _isLoading = false;
+      });
+    }
+  }
+
+  String _getErrorMessage(String code) {
+    switch (code) {
+      case 'email-already-in-use':
+        return 'Email already registered';
+      case 'invalid-email':
+        return 'Invalid email address';
+      case 'weak-password':
+        return 'Password is too weak';
+      case 'operation-not-allowed':
+        return 'Account creation is not available';
+      default:
+        return 'Signup failed. Please try again';
+    }
   }
 
   void _showTermsModal() {
@@ -153,9 +244,11 @@ class _SignupScreenState extends State<SignupScreen>
         ],
       ),
       padding: const EdgeInsets.all(15),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: _buildFormContent(context),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: _buildFormContent(context),
+        ),
       ),
     );
   }
@@ -165,6 +258,21 @@ class _SignupScreenState extends State<SignupScreen>
       const SizedBox(height: 8),
       _buildHeaderText(),
       const SizedBox(height: 25),
+      if (_errorMessage != null) ...[
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.red.withOpacity(0.1),
+            border: Border.all(color: Colors.red.withOpacity(0.5)),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Text(
+            _errorMessage!,
+            style: const TextStyle(color: Colors.red, fontSize: 12),
+          ),
+        ),
+        const SizedBox(height: 16),
+      ],
       _buildEmailField(),
       const SizedBox(height: 8),
       _buildPasswordField(),
@@ -206,6 +314,8 @@ class _SignupScreenState extends State<SignupScreen>
 
   Widget _buildEmailField() {
     return TextFormField(
+      controller: _emailController,
+      enabled: !_isLoading,
       decoration: const InputDecoration(
         prefixIcon: Icon(Icons.email_outlined),
         hintText: 'Email Address',
@@ -215,6 +325,8 @@ class _SignupScreenState extends State<SignupScreen>
 
   Widget _buildPasswordField() {
     return TextFormField(
+      controller: _passwordController,
+      enabled: !_isLoading,
       obscureText: _isObscure,
       decoration: InputDecoration(
         prefixIcon: const Icon(Icons.lock_outline),
@@ -226,6 +338,8 @@ class _SignupScreenState extends State<SignupScreen>
 
   Widget _buildConfirmPasswordField() {
     return TextFormField(
+      controller: _confirmPasswordController,
+      enabled: !_isLoading,
       obscureText: _isObscure,
       decoration: InputDecoration(
         prefixIcon: const Icon(Icons.lock_outline),
@@ -247,14 +361,16 @@ class _SignupScreenState extends State<SignupScreen>
 
   Widget _buildTermsCheckbox() {
     return GestureDetector(
-      onTap: _showTermsModal,
+      onTap: _isLoading ? null : _showTermsModal,
       child: Row(
         children: [
           Checkbox(
             value: _agreeToTerms,
             activeColor: AppColors.primary,
             side: const BorderSide(color: Color(0xFF2D3748), width: 1.5),
-            onChanged: (val) => setState(() => _agreeToTerms = val!),
+            onChanged: _isLoading
+                ? null
+                : (val) => setState(() => _agreeToTerms = val!),
           ),
           const Expanded(
             child: Text(
@@ -271,10 +387,19 @@ class _SignupScreenState extends State<SignupScreen>
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton(
-        onPressed: _agreeToTerms
-            ? () => Navigator.pushNamed(context, '/otp')
-            : null,
-        child: const Text("Sign Up"),
+        onPressed: _isLoading ? null : _signup,
+        child: _isLoading
+            ? SizedBox(
+                height: 20,
+                width: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    Colors.black.withOpacity(0.7),
+                  ),
+                ),
+              )
+            : const Text("Sign Up"),
       ),
     );
   }

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 import 'theme/app_colors.dart';
 import 'screens/login_screen.dart';
 import 'screens/signup_screen.dart';
@@ -7,7 +9,9 @@ import 'screens/otp_screen.dart';
 import 'screens/profile_completion_screen.dart';
 import 'screens/home_screen.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   runApp(const MyApp());
 }
 

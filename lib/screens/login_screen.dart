@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import '../theme/app_colors.dart';
 import '../widgets/social_buttons.dart';
 
@@ -16,6 +19,14 @@ class _LoginScreenState extends State<LoginScreen>
   late Animation<Offset> _slideAnimation;
 
   bool _isObscure = true;
+  bool _isLoading = false;
+  String? _errorMessage;
+
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final GoogleSignIn _googleSignIn = GoogleSignIn();
+  final FacebookAuth _facebookAuth = FacebookAuth.instance;
 
   @override
   void initState() {
@@ -44,7 +55,60 @@ class _LoginScreenState extends State<LoginScreen>
   @override
   void dispose() {
     _animationController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
     super.dispose();
+  }
+
+  Future<void> _login() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final email = _emailController.text.trim();
+      final password = _passwordController.text;
+
+      if (email.isEmpty || password.isEmpty) {
+        setState(() {
+          _errorMessage = 'Please fill in all fields';
+          _isLoading = false;
+        });
+        return;
+      }
+
+      await _auth.signInWithEmailAndPassword(email: email, password: password);
+
+      if (mounted) {
+        Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
+      }
+    } on FirebaseAuthException catch (e) {
+      setState(() {
+        _errorMessage = _getErrorMessage(e.code);
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'An unexpected error occurred';
+        _isLoading = false;
+      });
+    }
+  }
+
+  String _getErrorMessage(String code) {
+    switch (code) {
+      case 'user-not-found':
+        return 'No account found with this email';
+      case 'wrong-password':
+        return 'Incorrect password';
+      case 'invalid-email':
+        return 'Invalid email address';
+      case 'user-disabled':
+        return 'This account has been disabled';
+      default:
+        return 'Login failed. Please try again';
+    }
   }
 
   @override
@@ -140,9 +204,11 @@ class _LoginScreenState extends State<LoginScreen>
         ],
       ),
       padding: const EdgeInsets.all(15),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: _buildFormContent(context),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: _buildFormContent(context),
+        ),
       ),
     );
   }
@@ -152,6 +218,21 @@ class _LoginScreenState extends State<LoginScreen>
       const SizedBox(height: 15),
       _buildHeaderText(),
       const SizedBox(height: 30),
+      if (_errorMessage != null) ...[
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.red.withOpacity(0.1),
+            border: Border.all(color: Colors.red.withOpacity(0.5)),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Text(
+            _errorMessage!,
+            style: const TextStyle(color: Colors.red, fontSize: 12),
+          ),
+        ),
+        const SizedBox(height: 16),
+      ],
       _buildEmailField(),
       const SizedBox(height: 8),
       _buildPasswordField(),
@@ -191,6 +272,8 @@ class _LoginScreenState extends State<LoginScreen>
 
   Widget _buildEmailField() {
     return TextFormField(
+      controller: _emailController,
+      enabled: !_isLoading,
       decoration: const InputDecoration(
         prefixIcon: Icon(Icons.email_outlined),
         hintText: 'Email Address',
@@ -200,6 +283,8 @@ class _LoginScreenState extends State<LoginScreen>
 
   Widget _buildPasswordField() {
     return TextFormField(
+      controller: _passwordController,
+      enabled: !_isLoading,
       obscureText: _isObscure,
       decoration: InputDecoration(
         prefixIcon: const Icon(Icons.lock_outline),
@@ -242,8 +327,19 @@ class _LoginScreenState extends State<LoginScreen>
       child: SizedBox(
         width: 300,
         child: ElevatedButton(
-          onPressed: () => Navigator.pushNamed(context, '/home'),
-          child: const Text("Log In"),
+          onPressed: _isLoading ? null : _login,
+          child: _isLoading
+              ? SizedBox(
+                  height: 20,
+                  width: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      Colors.black.withOpacity(0.7),
+                    ),
+                  ),
+                )
+              : const Text("Log In"),
         ),
       ),
     );
@@ -260,19 +356,105 @@ class _LoginScreenState extends State<LoginScreen>
     );
   }
 
+  Future<void> _signInWithGoogle() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final googleUser = await _googleSignIn.signIn();
+      if (googleUser == null) {
+        setState(() {
+          _isLoading = false;
+        });
+        return;
+      }
+
+      final googleAuth = await googleUser.authentication;
+      final credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      await _auth.signInWithCredential(credential);
+
+      if (mounted) {
+        Navigator.pushNamedAndRemoveUntil(context, '/otp', (route) => false);
+      }
+    } on FirebaseAuthException catch (e) {
+      setState(() {
+        _errorMessage = _getErrorMessage(e.code);
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'Google Sign-In failed';
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<UserCredential?> _signInWithFacebook() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      // 1. Trigger the Facebook sign-in flow
+      final LoginResult result = await _facebookAuth.login(
+        permissions: ['public_profile', 'email'],
+      );
+
+      if (result.status == LoginStatus.success) {
+        // 2. Create a credential from the access token
+        final OAuthCredential credential = FacebookAuthProvider.credential(
+          result.accessToken!.token,
+        );
+
+        // 3. Sign in with Firebase using the credential
+        final userCredential = await _auth.signInWithCredential(credential);
+
+        if (mounted) {
+          Navigator.pushNamedAndRemoveUntil(context, '/otp', (route) => false);
+        }
+        return userCredential;
+      }
+
+      setState(() {
+        _errorMessage = 'Facebook Sign-In cancelled';
+        _isLoading = false;
+      });
+      return null;
+    } on FirebaseAuthException catch (e) {
+      setState(() {
+        _errorMessage = 'Firebase Error: ${e.message}';
+        _isLoading = false;
+      });
+      return null;
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'Facebook Sign-In failed: $e';
+        _isLoading = false;
+      });
+      return null;
+    }
+  }
+
   Widget _buildSocialButtons() {
     return Column(
       children: [
         SocialButton(
           text: "Log In with Google",
           imagePath: 'logos/google.png',
-          onPressed: () {},
+          onPressed: _isLoading ? null : _signInWithGoogle,
         ),
         const SizedBox(height: 8),
         SocialButton(
           text: "Log In with Facebook",
           imagePath: 'logos/facebook.png',
-          onPressed: () {},
+          onPressed: _isLoading ? null : _signInWithFacebook,
         ),
         const SizedBox(height: 15),
       ],

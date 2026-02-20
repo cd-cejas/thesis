@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../theme/app_colors.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
@@ -13,11 +14,17 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
+  late TextEditingController _emailController;
+  bool _isLoading = false;
+  String? _errorMessage;
+  String? _successMessage;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
 
   @override
   void initState() {
     super.initState();
     _initializeAnimations();
+    _emailController = TextEditingController();
   }
 
   void _initializeAnimations() {
@@ -41,7 +48,58 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
   @override
   void dispose() {
     _animationController.dispose();
+    _emailController.dispose();
     super.dispose();
+  }
+
+  Future<void> _sendPasswordResetEmail() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+      _successMessage = null;
+    });
+
+    try {
+      final email = _emailController.text.trim();
+
+      if (email.isEmpty) {
+        setState(() {
+          _errorMessage = 'Please enter your email address';
+          _isLoading = false;
+        });
+        return;
+      }
+
+      await _auth.sendPasswordResetEmail(email: email);
+
+      setState(() {
+        _successMessage =
+            'Password reset link sent to $email. Check your inbox.';
+        _isLoading = false;
+        _emailController.clear();
+      });
+    } on FirebaseAuthException catch (e) {
+      setState(() {
+        _errorMessage = _getErrorMessage(e.code);
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'An unexpected error occurred';
+        _isLoading = false;
+      });
+    }
+  }
+
+  String _getErrorMessage(String code) {
+    switch (code) {
+      case 'user-not-found':
+        return 'No account found with this email';
+      case 'invalid-email':
+        return 'Invalid email address';
+      default:
+        return 'Error sending reset email. Please try again';
+    }
   }
 
   @override
@@ -149,6 +207,36 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
       const SizedBox(height: 15),
       _buildSubtitleText(),
       const SizedBox(height: 40),
+      if (_errorMessage != null) ...[
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.red.withOpacity(0.1),
+            border: Border.all(color: Colors.red.withOpacity(0.5)),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Text(
+            _errorMessage!,
+            style: const TextStyle(color: Colors.red, fontSize: 12),
+          ),
+        ),
+        const SizedBox(height: 16),
+      ],
+      if (_successMessage != null) ...[
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.green.withOpacity(0.1),
+            border: Border.all(color: Colors.green.withOpacity(0.5)),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Text(
+            _successMessage!,
+            style: const TextStyle(color: Colors.green, fontSize: 12),
+          ),
+        ),
+        const SizedBox(height: 16),
+      ],
       _buildEmailField(),
       const SizedBox(height: 16),
       _buildSendButton(context),
@@ -179,6 +267,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
 
   Widget _buildEmailField() {
     return TextFormField(
+      controller: _emailController,
+      enabled: !_isLoading,
       decoration: const InputDecoration(
         prefixIcon: Icon(Icons.email_outlined),
         hintText: 'Email Address',
@@ -190,8 +280,19 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton(
-        onPressed: () {},
-        child: const Text("Send Reset Link"),
+        onPressed: _isLoading ? null : _sendPasswordResetEmail,
+        child: _isLoading
+            ? SizedBox(
+                height: 20,
+                width: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    Colors.black.withOpacity(0.7),
+                  ),
+                ),
+              )
+            : const Text("Send Reset Link"),
       ),
     );
   }
