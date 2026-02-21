@@ -21,7 +21,6 @@ class _OtpScreenState extends State<OtpScreen>
   bool _isLoading = false;
   String? _errorMessage;
   String? _verificationId;
-  int? _resendToken;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
   @override
@@ -129,12 +128,11 @@ class _OtpScreenState extends State<OtpScreen>
   }
 
   BoxDecoration _buildGradientDecoration() {
-    return BoxDecoration(
-      gradient: RadialGradient(
-        radius: 1,
-        colors: [const Color(0xFF00365D), Colors.black],
-      ),
-    );
+    final isLight = Theme.of(context).brightness == Brightness.light;
+    final colors = isLight
+        ? [AppColors.light1, AppColors.light2]
+        : [const Color(0xFF00365D), Colors.black];
+    return BoxDecoration(gradient: RadialGradient(radius: 1, colors: colors));
   }
 
   Widget _buildFloatingContainer(BuildContext context) {

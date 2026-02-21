@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:provider/provider.dart';
 import '../theme/app_colors.dart';
+import '../theme/theme_provider.dart';
+import '../widgets/terms_modal.dart';
 
 class ProfileCompletionScreen extends StatefulWidget {
   const ProfileCompletionScreen({super.key});
@@ -25,6 +28,7 @@ class _ProfileCompletionScreenState extends State<ProfileCompletionScreen>
 
   String? _selectedSex;
   String? _selectedGradeLevel;
+  bool _agreeToTerms = false;
 
   final List<String> _sexOptions = ['Male', 'Female'];
   final List<String> _gradeLevels = ['Grade 11', 'Grade 12'];
@@ -102,38 +106,51 @@ class _ProfileCompletionScreenState extends State<ProfileCompletionScreen>
     }
   }
 
+  void _showTermsModal() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) =>
+          TermsModal(onAgree: () => setState(() => _agreeToTerms = true)),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: _buildAppBar(),
-      body: Container(
-        decoration: _buildGradientDecoration(),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Expanded(
-              child: Center(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: FadeTransition(
-                    opacity: _fadeAnimation,
-                    child: SlideTransition(
-                      position: _slideAnimation,
-                      child: _buildFloatingContainer(context),
+      body: SafeArea(
+        child: Container(
+          decoration: _buildGradientDecoration(),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Expanded(
+                child: Center(
+                  child: SingleChildScrollView(
+                    padding: EdgeInsets.fromLTRB(24, 0, 24, bottomInset + 24),
+                    child: FadeTransition(
+                      opacity: _fadeAnimation,
+                      child: SlideTransition(
+                        position: _slideAnimation,
+                        child: _buildFloatingContainer(context),
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.only(left: 24, right: 24, bottom: 16),
-              child: Text(
-                "Developed By: Carl Dindo L. Cejas & Joshua Jhon Juariza",
-                style: TextStyle(fontSize: 8, color: Colors.grey[600]),
+              Padding(
+                padding: const EdgeInsets.only(left: 24, right: 24, bottom: 16),
+                child: Text(
+                  "Developed By: Carl Dindo L. Cejas & Joshua Jhon Juariza",
+                  style: TextStyle(fontSize: 8, color: Colors.grey[600]),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -157,26 +174,51 @@ class _ProfileCompletionScreenState extends State<ProfileCompletionScreen>
       leading: Padding(
         padding: const EdgeInsets.only(top: 10),
         child: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          icon: Icon(
+            Icons.arrow_back,
+            color: Theme.of(context).brightness == Brightness.dark
+                ? Colors.white
+                : Colors.black87,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
       ),
+      actions: [
+        Padding(
+          padding: const EdgeInsets.only(right: 16, top: 10),
+          child: IconButton(
+            icon: Consumer<ThemeProvider>(
+              builder: (context, themeProvider, _) {
+                return Icon(
+                  themeProvider.isDarkMode ? Icons.light_mode : Icons.dark_mode,
+                  color: themeProvider.isDarkMode
+                      ? Colors.white
+                      : Colors.black87,
+                );
+              },
+            ),
+            onPressed: () {
+              Provider.of<ThemeProvider>(context, listen: false).toggleTheme();
+            },
+            tooltip: 'Toggle Theme',
+          ),
+        ),
+      ],
     );
   }
 
   BoxDecoration _buildGradientDecoration() {
-    return BoxDecoration(
-      gradient: RadialGradient(
-        radius: 1,
-        colors: [const Color(0xFF00365D), Colors.black],
-      ),
-    );
+    final isLight = Theme.of(context).brightness == Brightness.light;
+    final colors = isLight
+        ? [AppColors.light1, AppColors.light2]
+        : [const Color(0xFF00365D), Colors.black];
+    return BoxDecoration(gradient: RadialGradient(radius: 1, colors: colors));
   }
 
   Widget _buildFloatingContainer(BuildContext context) {
     return Container(
-      constraints: const BoxConstraints(maxWidth: 350, maxHeight: 650),
-      margin: EdgeInsets.only(top: 55),
+      constraints: const BoxConstraints(maxWidth: 360),
+      margin: const EdgeInsets.only(top: 32),
       decoration: BoxDecoration(
         color: const Color(0xFF1A1F2E),
         borderRadius: BorderRadius.circular(24),
@@ -234,6 +276,8 @@ class _ProfileCompletionScreenState extends State<ProfileCompletionScreen>
       _buildAddressField(),
       const SizedBox(height: 10),
       _buildGradeLevelDropdown(),
+      const SizedBox(height: 10),
+      _buildTermsCheckbox(),
       const SizedBox(height: 25),
       _buildCompleteButton(context),
     ];
@@ -390,6 +434,30 @@ class _ProfileCompletionScreenState extends State<ProfileCompletionScreen>
     );
   }
 
+  Widget _buildTermsCheckbox() {
+    return GestureDetector(
+      onTap: _isLoading ? null : _showTermsModal,
+      child: Row(
+        children: [
+          Checkbox(
+            value: _agreeToTerms,
+            activeColor: AppColors.primary,
+            side: const BorderSide(color: Color(0xFF2D3748), width: 1.5),
+            onChanged: _isLoading
+                ? null
+                : (val) => setState(() => _agreeToTerms = val ?? false),
+          ),
+          const Expanded(
+            child: Text(
+              "I agree to the Terms of Service",
+              style: TextStyle(color: Colors.white, fontSize: 14),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildCompleteButton(BuildContext context) {
     return SizedBox(
       width: double.infinity,
@@ -419,11 +487,17 @@ class _ProfileCompletionScreenState extends State<ProfileCompletionScreen>
         _birthdayController.text.isNotEmpty &&
         _selectedSex != null &&
         _addressController.text.isNotEmpty &&
-        _selectedGradeLevel != null;
+        _selectedGradeLevel != null &&
+        _agreeToTerms;
   }
 
   Future<void> _completeProfile(BuildContext context) async {
-    if (!_isFormValid()) return;
+    if (!_isFormValid()) {
+      setState(() {
+        _errorMessage = 'Please complete all fields and agree to the Terms.';
+      });
+      return;
+    }
 
     setState(() {
       _isLoading = true;

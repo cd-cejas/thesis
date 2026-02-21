@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">app_try</string>
+    <!-- Replace with your real Facebook App ID -->
+    <string name="facebook_app_id">1392401562163984</string>
+    <!-- Replace with your real Facebook Client Token -->
+    <string name="facebook_client_token">a5421a46a1cad08c800b11639f6245de</string>
+    <!-- Must be fb + your app id, e.g., fb1234567890 -->
+    <string name="fb_login_protocol_scheme">fb1392401562163984</string>
+</resources>

@@ -1,8 +1,12 @@
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
+import 'package:provider/provider.dart';
 import '../theme/app_colors.dart';
+import '../theme/theme_provider.dart';
 import '../widgets/social_buttons.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -113,36 +117,39 @@ class _LoginScreenState extends State<LoginScreen>
 
   @override
   Widget build(BuildContext context) {
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: _buildAppBar(),
-      body: Container(
-        decoration: _buildGradientDecoration(),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Expanded(
-              child: Center(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: FadeTransition(
-                    opacity: _fadeAnimation,
-                    child: SlideTransition(
-                      position: _slideAnimation,
-                      child: _buildFloatingContainer(context),
+      body: SafeArea(
+        child: Container(
+          decoration: _buildGradientDecoration(),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Expanded(
+                child: Center(
+                  child: SingleChildScrollView(
+                    padding: EdgeInsets.fromLTRB(24, 0, 24, bottomInset + 24),
+                    child: FadeTransition(
+                      opacity: _fadeAnimation,
+                      child: SlideTransition(
+                        position: _slideAnimation,
+                        child: _buildFloatingContainer(context),
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.only(left: 24, right: 24, bottom: 16),
-              child: Text(
-                "Developed By: Carl Dindo L. Cejas & Joshua Jhon Juariza",
-                style: TextStyle(fontSize: 8, color: Colors.grey[600]),
+              Padding(
+                padding: const EdgeInsets.only(left: 24, right: 24, bottom: 16),
+                child: Text(
+                  "Developed By: Carl Dindo L. Cejas & Joshua Jhon Juariza",
+                  style: TextStyle(fontSize: 8, color: Colors.grey[600]),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -166,26 +173,51 @@ class _LoginScreenState extends State<LoginScreen>
       leading: Padding(
         padding: const EdgeInsets.only(top: 10),
         child: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
+          icon: Icon(
+            Icons.arrow_back,
+            color: Theme.of(context).brightness == Brightness.dark
+                ? Colors.white
+                : Colors.black87,
+          ),
+          onPressed: () => exit(0),
         ),
       ),
+      actions: [
+        Padding(
+          padding: const EdgeInsets.only(right: 16, top: 10),
+          child: IconButton(
+            icon: Consumer<ThemeProvider>(
+              builder: (context, themeProvider, _) {
+                return Icon(
+                  themeProvider.isDarkMode ? Icons.light_mode : Icons.dark_mode,
+                  color: themeProvider.isDarkMode
+                      ? Colors.white
+                      : Colors.black87,
+                );
+              },
+            ),
+            onPressed: () {
+              Provider.of<ThemeProvider>(context, listen: false).toggleTheme();
+            },
+            tooltip: 'Toggle Theme',
+          ),
+        ),
+      ],
     );
   }
 
   BoxDecoration _buildGradientDecoration() {
-    return BoxDecoration(
-      gradient: RadialGradient(
-        radius: 1,
-        colors: [const Color(0xFF00365D), Colors.black],
-      ),
-    );
+    final isLight = Theme.of(context).brightness == Brightness.light;
+    final colors = isLight
+        ? [AppColors.light1, AppColors.light2]
+        : [const Color(0xFF00365D), Colors.black];
+    return BoxDecoration(gradient: RadialGradient(radius: 1, colors: colors));
   }
 
   Widget _buildFloatingContainer(BuildContext context) {
     return Container(
-      constraints: const BoxConstraints(maxWidth: 300, maxHeight: 550),
-      margin: EdgeInsets.only(top: 20),
+      constraints: const BoxConstraints(maxWidth: 320),
+      margin: const EdgeInsets.only(top: 20),
       decoration: BoxDecoration(
         color: const Color(0xFF1A1F2E),
         borderRadius: BorderRadius.circular(24),
@@ -363,24 +395,29 @@ class _LoginScreenState extends State<LoginScreen>
     });
 
     try {
-      final googleUser = await _googleSignIn.signIn();
-      if (googleUser == null) {
-        setState(() {
-          _isLoading = false;
-        });
-        return;
+      UserCredential credential;
+      if (kIsWeb) {
+        credential = await _auth.signInWithPopup(GoogleAuthProvider());
+      } else {
+        final googleUser = await _googleSignIn.signIn();
+        if (googleUser == null) {
+          setState(() {
+            _isLoading = false;
+          });
+          return;
+        }
+
+        final googleAuth = await googleUser.authentication;
+        final oauthCredential = GoogleAuthProvider.credential(
+          accessToken: googleAuth.accessToken,
+          idToken: googleAuth.idToken,
+        );
+
+        credential = await _auth.signInWithCredential(oauthCredential);
       }
 
-      final googleAuth = await googleUser.authentication;
-      final credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
-        idToken: googleAuth.idToken,
-      );
-
-      await _auth.signInWithCredential(credential);
-
       if (mounted) {
-        Navigator.pushNamedAndRemoveUntil(context, '/otp', (route) => false);
+        Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
       }
     } on FirebaseAuthException catch (e) {
       setState(() {
@@ -402,31 +439,46 @@ class _LoginScreenState extends State<LoginScreen>
     });
 
     try {
-      // 1. Trigger the Facebook sign-in flow
-      final LoginResult result = await _facebookAuth.login(
-        permissions: ['public_profile', 'email'],
-      );
-
-      if (result.status == LoginStatus.success) {
-        // 2. Create a credential from the access token
-        final OAuthCredential credential = FacebookAuthProvider.credential(
-          result.accessToken!.token,
+      if (kIsWeb) {
+        final userCredential = await _auth.signInWithPopup(
+          FacebookAuthProvider(),
         );
 
-        // 3. Sign in with Firebase using the credential
-        final userCredential = await _auth.signInWithCredential(credential);
-
         if (mounted) {
-          Navigator.pushNamedAndRemoveUntil(context, '/otp', (route) => false);
+          Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
         }
         return userCredential;
-      }
+      } else {
+        // 1. Trigger the Facebook sign-in flow
+        final LoginResult result = await _facebookAuth.login(
+          permissions: ['public_profile', 'email'],
+        );
 
-      setState(() {
-        _errorMessage = 'Facebook Sign-In cancelled';
-        _isLoading = false;
-      });
-      return null;
+        if (result.status == LoginStatus.success) {
+          // 2. Create a credential from the access token
+          final OAuthCredential credential = FacebookAuthProvider.credential(
+            result.accessToken!.token,
+          );
+
+          // 3. Sign in with Firebase using the credential
+          final userCredential = await _auth.signInWithCredential(credential);
+
+          if (mounted) {
+            Navigator.pushNamedAndRemoveUntil(
+              context,
+              '/home',
+              (route) => false,
+            );
+          }
+          return userCredential;
+        }
+
+        setState(() {
+          _errorMessage = 'Facebook Sign-In cancelled';
+          _isLoading = false;
+        });
+        return null;
+      }
     } on FirebaseAuthException catch (e) {
       setState(() {
         _errorMessage = 'Firebase Error: ${e.message}';

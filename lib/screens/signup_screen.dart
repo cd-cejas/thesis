@@ -1,9 +1,12 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:provider/provider.dart';
 import '../theme/app_colors.dart';
+import '../theme/theme_provider.dart';
 import '../widgets/social_buttons.dart';
-import '../widgets/terms_modal.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -18,16 +21,19 @@ class _SignupScreenState extends State<SignupScreen>
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
 
-  bool _agreeToTerms = false;
   bool _isObscure = true;
   bool _isLoading = false;
   String? _errorMessage;
+  final _formKey = GlobalKey<FormState>();
+  final RegExp _emailRegex = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
 
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController =
       TextEditingController();
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final GoogleSignIn _googleSignIn = GoogleSignIn();
+  final FacebookAuth _facebookAuth = FacebookAuth.instance;
 
   @override
   void initState() {
@@ -63,55 +69,85 @@ class _SignupScreenState extends State<SignupScreen>
   }
 
   Future<void> _signup() async {
+    if (_isLoading) return;
+
+    FocusScope.of(context).unfocus();
+
+    final email = _emailController.text.trim();
+    final password = _passwordController.text.trim();
+    final confirmPassword = _confirmPasswordController.text.trim();
+
+    final isValid = _formKey.currentState?.validate() ?? false;
+    if (!isValid) {
+      return;
+    }
+
     setState(() {
       _isLoading = true;
       _errorMessage = null;
     });
 
     try {
-      final email = _emailController.text.trim();
-      final password = _passwordController.text;
-      final confirmPassword = _confirmPasswordController.text;
-
-      if (email.isEmpty || password.isEmpty || confirmPassword.isEmpty) {
-        setState(() {
-          _errorMessage = 'Please fill in all fields';
-          _isLoading = false;
-        });
-        return;
-      }
-
-      if (password != confirmPassword) {
-        setState(() {
-          _errorMessage = 'Passwords do not match';
-          _isLoading = false;
-        });
-        return;
-      }
-
-      if (password.length < 6) {
-        setState(() {
-          _errorMessage = 'Password must be at least 6 characters';
-          _isLoading = false;
-        });
-        return;
-      }
-
-      if (!_agreeToTerms) {
-        setState(() {
-          _errorMessage = 'Please agree to the Terms of Service';
-          _isLoading = false;
-        });
-        return;
-      }
-
       await _auth.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
 
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        '/profile_completion',
+        (route) => false,
+      );
+    } on FirebaseAuthException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = _getErrorMessage(e.code);
+        _isLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = 'An unexpected error occurred';
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _signUpWithGoogle() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      UserCredential credential;
+      if (kIsWeb) {
+        credential = await _auth.signInWithPopup(GoogleAuthProvider());
+      } else {
+        final googleUser = await _googleSignIn.signIn();
+        if (googleUser == null) {
+          setState(() => _isLoading = false);
+          return;
+        }
+
+        final googleAuth = await googleUser.authentication;
+        final oauthCredential = GoogleAuthProvider.credential(
+          accessToken: googleAuth.accessToken,
+          idToken: googleAuth.idToken,
+        );
+
+        credential = await _auth.signInWithCredential(oauthCredential);
+      }
+
       if (mounted) {
-        Navigator.pushNamedAndRemoveUntil(context, '/profile_completion', (route) => false);
+        setState(() => _isLoading = false);
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          '/profile_completion',
+          (route) => false,
+        );
       }
     } on FirebaseAuthException catch (e) {
       setState(() {
@@ -120,9 +156,74 @@ class _SignupScreenState extends State<SignupScreen>
       });
     } catch (e) {
       setState(() {
-        _errorMessage = 'An unexpected error occurred';
+        _errorMessage = 'Google Sign-Up failed';
         _isLoading = false;
       });
+    }
+  }
+
+  Future<UserCredential?> _signUpWithFacebook() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      if (kIsWeb) {
+        final userCredential = await _auth.signInWithPopup(
+          FacebookAuthProvider(),
+        );
+
+        if (mounted) {
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            '/profile_completion',
+            (route) => false,
+          );
+        }
+        return userCredential;
+      } else {
+        final LoginResult result = await _facebookAuth.login(
+          permissions: ['public_profile', 'email'],
+        );
+
+        if (result.status == LoginStatus.success &&
+            result.accessToken != null) {
+          final OAuthCredential credential = FacebookAuthProvider.credential(
+            result.accessToken!.token,
+          );
+
+          final userCredential = await _auth.signInWithCredential(credential);
+
+          if (mounted) {
+            setState(() => _isLoading = false);
+            Navigator.pushNamedAndRemoveUntil(
+              context,
+              '/profile_completion',
+              (route) => false,
+            );
+          }
+          return userCredential;
+        }
+
+        setState(() {
+          _errorMessage = 'Facebook Sign-Up cancelled';
+          _isLoading = false;
+        });
+        return null;
+      }
+    } on FirebaseAuthException catch (e) {
+      setState(() {
+        _errorMessage = 'Firebase Error: ${e.message}';
+        _isLoading = false;
+      });
+      return null;
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'Facebook Sign-Up failed: $e';
+        _isLoading = false;
+      });
+      return null;
     }
   }
 
@@ -141,48 +242,41 @@ class _SignupScreenState extends State<SignupScreen>
     }
   }
 
-  void _showTermsModal() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) =>
-          TermsModal(onAgree: () => setState(() => _agreeToTerms = true)),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: _buildAppBar(),
-      body: Container(
-        decoration: _buildGradientDecoration(),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Expanded(
-              child: Center(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: FadeTransition(
-                    opacity: _fadeAnimation,
-                    child: SlideTransition(
-                      position: _slideAnimation,
-                      child: _buildFloatingContainer(context),
+      body: SafeArea(
+        child: Container(
+          decoration: _buildGradientDecoration(),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Expanded(
+                child: Center(
+                  child: SingleChildScrollView(
+                    padding: EdgeInsets.fromLTRB(24, 0, 24, bottomInset + 24),
+                    child: FadeTransition(
+                      opacity: _fadeAnimation,
+                      child: SlideTransition(
+                        position: _slideAnimation,
+                        child: _buildFloatingContainer(context),
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.only(left: 24, right: 24, bottom: 16),
-              child: Text(
-                "Developed By: Carl Dindo L. Cejas & Joshua Jhon Juariza",
-                style: TextStyle(fontSize: 8, color: Colors.grey[600]),
+              Padding(
+                padding: const EdgeInsets.only(left: 24, right: 24, bottom: 16),
+                child: Text(
+                  "Developed By: Carl Dindo L. Cejas & Joshua Jhon Juariza",
+                  style: TextStyle(fontSize: 8, color: Colors.grey[600]),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -206,26 +300,51 @@ class _SignupScreenState extends State<SignupScreen>
       leading: Padding(
         padding: const EdgeInsets.only(top: 10),
         child: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          icon: Icon(
+            Icons.arrow_back,
+            color: Theme.of(context).brightness == Brightness.dark
+                ? Colors.white
+                : Colors.black87,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
       ),
+      actions: [
+        Padding(
+          padding: const EdgeInsets.only(right: 16, top: 10),
+          child: IconButton(
+            icon: Consumer<ThemeProvider>(
+              builder: (context, themeProvider, _) {
+                return Icon(
+                  themeProvider.isDarkMode ? Icons.light_mode : Icons.dark_mode,
+                  color: themeProvider.isDarkMode
+                      ? Colors.white
+                      : Colors.black87,
+                );
+              },
+            ),
+            onPressed: () {
+              Provider.of<ThemeProvider>(context, listen: false).toggleTheme();
+            },
+            tooltip: 'Toggle Theme',
+          ),
+        ),
+      ],
     );
   }
 
   BoxDecoration _buildGradientDecoration() {
-    return BoxDecoration(
-      gradient: RadialGradient(
-        radius: 1,
-        colors: [const Color(0xFF00365D), Colors.black],
-      ),
-    );
+    final isLight = Theme.of(context).brightness == Brightness.light;
+    final colors = isLight
+        ? [AppColors.light1, AppColors.light2]
+        : [const Color(0xFF00365D), Colors.black];
+    return BoxDecoration(gradient: RadialGradient(radius: 1, colors: colors));
   }
 
   Widget _buildFloatingContainer(BuildContext context) {
     return Container(
-      constraints: const BoxConstraints(maxWidth: 350, maxHeight: 600),
-      margin: EdgeInsets.only(top: 55),
+      constraints: const BoxConstraints(maxWidth: 340),
+      margin: const EdgeInsets.only(top: 32),
       decoration: BoxDecoration(
         color: const Color(0xFF1A1F2E),
         borderRadius: BorderRadius.circular(24),
@@ -245,9 +364,12 @@ class _SignupScreenState extends State<SignupScreen>
       ),
       padding: const EdgeInsets.all(15),
       child: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: _buildFormContent(context),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: _buildFormContent(context),
+          ),
         ),
       ),
     );
@@ -278,8 +400,6 @@ class _SignupScreenState extends State<SignupScreen>
       _buildPasswordField(),
       const SizedBox(height: 8),
       _buildConfirmPasswordField(),
-      const SizedBox(height: 8),
-      _buildTermsCheckbox(),
       const SizedBox(height: 8),
       _buildSignUpButton(context),
       const SizedBox(height: 12),
@@ -316,6 +436,16 @@ class _SignupScreenState extends State<SignupScreen>
     return TextFormField(
       controller: _emailController,
       enabled: !_isLoading,
+      keyboardType: TextInputType.emailAddress,
+      autofillHints: const [AutofillHints.email],
+      autovalidateMode: AutovalidateMode.onUserInteraction,
+      textInputAction: TextInputAction.next,
+      validator: (value) {
+        final email = (value ?? '').trim();
+        if (email.isEmpty) return 'Email is required';
+        if (!_emailRegex.hasMatch(email)) return 'Enter a valid email';
+        return null;
+      },
       decoration: const InputDecoration(
         prefixIcon: Icon(Icons.email_outlined),
         hintText: 'Email Address',
@@ -328,6 +458,15 @@ class _SignupScreenState extends State<SignupScreen>
       controller: _passwordController,
       enabled: !_isLoading,
       obscureText: _isObscure,
+      autovalidateMode: AutovalidateMode.onUserInteraction,
+      textInputAction: TextInputAction.next,
+      onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
+      validator: (value) {
+        final password = value ?? '';
+        if (password.isEmpty) return 'Password is required';
+        if (password.length < 6) return 'Use at least 6 characters';
+        return null;
+      },
       decoration: InputDecoration(
         prefixIcon: const Icon(Icons.lock_outline),
         hintText: 'Password',
@@ -341,6 +480,15 @@ class _SignupScreenState extends State<SignupScreen>
       controller: _confirmPasswordController,
       enabled: !_isLoading,
       obscureText: _isObscure,
+      autovalidateMode: AutovalidateMode.onUserInteraction,
+      textInputAction: TextInputAction.done,
+      validator: (value) {
+        final confirm = value ?? '';
+        if (confirm.isEmpty) return 'Confirm your password';
+        if (confirm != _passwordController.text)
+          return 'Passwords do not match';
+        return null;
+      },
       decoration: InputDecoration(
         prefixIcon: const Icon(Icons.lock_outline),
         hintText: 'Confirm Password',
@@ -356,30 +504,6 @@ class _SignupScreenState extends State<SignupScreen>
         color: AppColors.textSecondary,
       ),
       onPressed: () => setState(() => _isObscure = !_isObscure),
-    );
-  }
-
-  Widget _buildTermsCheckbox() {
-    return GestureDetector(
-      onTap: _isLoading ? null : _showTermsModal,
-      child: Row(
-        children: [
-          Checkbox(
-            value: _agreeToTerms,
-            activeColor: AppColors.primary,
-            side: const BorderSide(color: Color(0xFF2D3748), width: 1.5),
-            onChanged: _isLoading
-                ? null
-                : (val) => setState(() => _agreeToTerms = val!),
-          ),
-          const Expanded(
-            child: Text(
-              "I agree to the Terms of Service",
-              style: TextStyle(color: Colors.white, fontSize: 14),
-            ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -421,13 +545,13 @@ class _SignupScreenState extends State<SignupScreen>
         SocialButton(
           text: "Sign Up with Google",
           imagePath: 'logos/google.png',
-          onPressed: () {},
+          onPressed: _isLoading ? null : _signUpWithGoogle,
         ),
         const SizedBox(height: 8),
         SocialButton(
           text: "Sign Up with Facebook",
           imagePath: 'logos/facebook.png',
-          onPressed: () {},
+          onPressed: _isLoading ? null : _signUpWithFacebook,
         ),
         const SizedBox(height: 10),
       ],
