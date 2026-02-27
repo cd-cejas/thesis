@@ -8,6 +8,7 @@ class TermsModal extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isLight = Theme.of(context).brightness == Brightness.light;
     return DraggableScrollableSheet(
       initialChildSize: 0.7,
       minChildSize: 0.5,
@@ -15,9 +16,9 @@ class TermsModal extends StatelessWidget {
       expand: false,
       builder: (context, scrollController) {
         return Container(
-          decoration: const BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          decoration: BoxDecoration(
+            color: AppColors.surfaceFor(isLight),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
           ),
           padding: const EdgeInsets.all(24.0),
           child: Column(
@@ -25,22 +26,26 @@ class TermsModal extends StatelessWidget {
               Container(
                 width: 40,
                 height: 4,
-                color: Colors.grey,
+                decoration: BoxDecoration(
+                  color: AppColors.borderColor(isLight),
+                  borderRadius: BorderRadius.circular(2),
+                ),
                 margin: const EdgeInsets.only(bottom: 20),
               ),
-              const Text(
+              Text(
                 "Terms & Data Privacy",
                 style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
-                  color: Colors.white,
+                  color: AppColors.textPrimaryFor(isLight),
                 ),
               ),
               const SizedBox(height: 20),
               Expanded(
                 child: SingleChildScrollView(
                   controller: scrollController,
-                  child: const Text("""
+                  child: Text(
+                    """
 REPUBLIC ACT NO. 10173
 DATA PRIVACY ACT OF 2012
 
@@ -54,7 +59,12 @@ SECTION 1. Short Title. – This Act shall be known as the “Data Privacy Act o
 SECTION 2. Declaration of Policy. – It is the policy of the State to protect the fundamental human right of privacy, of communication while ensuring free flow of information to promote innovation and growth. The State recognizes the vital role of information and communications technology in nation-building and its inherent obligation to ensure that personal information in information and communications systems in the government and in the private sector are secured and protected.
 
 (Full text continues here...)
-                    """, style: TextStyle(color: Colors.white70, height: 1.5)),
+                    """,
+                    style: TextStyle(
+                      color: AppColors.textSecondaryFor(isLight),
+                      height: 1.5,
+                    ),
+                  ),
                 ),
               ),
               const SizedBox(height: 20),
@@ -72,10 +82,10 @@ SECTION 2. Declaration of Policy. – It is the policy of the State to protect t
                     onAgree();
                     Navigator.pop(context);
                   },
-                  child: const Text(
+                  child: Text(
                     "I Agree",
                     style: TextStyle(
-                      color: Colors.black,
+                      color: isLight ? AppColors.light4 : Colors.black,
                       fontWeight: FontWeight.bold,
                     ),
                   ),

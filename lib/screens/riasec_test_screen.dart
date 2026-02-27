@@ -68,25 +68,32 @@ class _RiasecTestScreenState extends State<RiasecTestScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isLight = Theme.of(context).brightness == Brightness.light;
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          icon: Icon(
+            Icons.arrow_back,
+            color: AppColors.textPrimaryFor(isLight),
+          ),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           "RIASEC Career Test",
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            color: AppColors.textPrimaryFor(isLight),
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ),
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.backgroundFor(isLight),
       body: Container(
         decoration: BoxDecoration(
           gradient: RadialGradient(
             radius: 1,
-            colors: [const Color(0xFF00365D), Colors.black],
+            colors: AppColors.gradientColors(isLight),
           ),
         ),
         child: SafeArea(
@@ -114,8 +121,8 @@ class _RiasecTestScreenState extends State<RiasecTestScreen> {
                         ),
                         Text(
                           "${((_currentQuestionIndex / 50) * 100).toStringAsFixed(1)}%",
-                          style: const TextStyle(
-                            color: AppColors.textSecondary,
+                          style: TextStyle(
+                            color: AppColors.textSecondaryFor(isLight),
                             fontSize: 12,
                           ),
                         ),
@@ -127,7 +134,9 @@ class _RiasecTestScreenState extends State<RiasecTestScreen> {
                       child: LinearProgressIndicator(
                         value: _currentQuestionIndex / 50,
                         minHeight: 8,
-                        backgroundColor: Colors.white24,
+                        backgroundColor: isLight
+                            ? AppColors.light2.withOpacity(0.4)
+                            : Colors.white24,
                         valueColor: const AlwaysStoppedAnimation<Color>(
                           AppColors.primary,
                         ),
@@ -150,8 +159,8 @@ class _RiasecTestScreenState extends State<RiasecTestScreen> {
                       Text(
                         _questions[_currentQuestionIndex],
                         textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          color: Colors.white,
+                        style: TextStyle(
+                          color: AppColors.textPrimaryFor(isLight),
                           fontSize: 20,
                           fontWeight: FontWeight.w600,
                           height: 1.6,
@@ -202,7 +211,9 @@ class _RiasecTestScreenState extends State<RiasecTestScreen> {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primary,
                           foregroundColor: Colors.black,
-                          disabledBackgroundColor: Colors.grey[600],
+                          disabledBackgroundColor: isLight
+                              ? AppColors.light2
+                              : Colors.grey[600],
                         ),
                       ),
                     ),
@@ -236,7 +247,9 @@ class _RiasecTestScreenState extends State<RiasecTestScreen> {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primary,
                           foregroundColor: Colors.black,
-                          disabledBackgroundColor: Colors.grey[600],
+                          disabledBackgroundColor: isLight
+                              ? AppColors.light2
+                              : Colors.grey[600],
                         ),
                       ),
                     ),
@@ -251,6 +264,7 @@ class _RiasecTestScreenState extends State<RiasecTestScreen> {
   }
 
   Widget _buildAnswerButton(String label, int value) {
+    final isLight = Theme.of(context).brightness == Brightness.light;
     final isSelected =
         _answers.length > _currentQuestionIndex &&
         _answers[_currentQuestionIndex] == value;
@@ -271,10 +285,18 @@ class _RiasecTestScreenState extends State<RiasecTestScreen> {
         style: ElevatedButton.styleFrom(
           backgroundColor: isSelected
               ? AppColors.primary
+              : isLight
+              ? AppColors.light2.withOpacity(0.25)
               : Colors.white.withOpacity(0.1),
-          foregroundColor: isSelected ? Colors.black : Colors.white,
+          foregroundColor: isSelected
+              ? Colors.black
+              : AppColors.textPrimaryFor(isLight),
           side: BorderSide(
-            color: isSelected ? AppColors.primary : Colors.white30,
+            color: isSelected
+                ? AppColors.primary
+                : isLight
+                ? AppColors.light2
+                : Colors.white30,
             width: 2,
           ),
           shape: RoundedRectangleBorder(

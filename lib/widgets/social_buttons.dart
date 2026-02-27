@@ -1,5 +1,5 @@
-// TODO Implement this library.
 import 'package:flutter/material.dart';
+import '../theme/app_colors.dart';
 
 class SocialButton extends StatefulWidget {
   final String text;
@@ -74,13 +74,14 @@ class _SocialButtonState extends State<SocialButton>
   }
 
   BoxDecoration _buildButtonDecoration() {
+    final isLight = Theme.of(context).brightness == Brightness.light;
     return BoxDecoration(
-      color: const Color(0xFF1E2329),
+      color: isLight ? Colors.white : const Color(0xFF1E2329),
       borderRadius: BorderRadius.circular(100),
-      border: Border.all(color: const Color(0xFF2D3748), width: 1.5),
+      border: Border.all(color: AppColors.borderColor(isLight), width: 1.5),
       boxShadow: [
         BoxShadow(
-          color: Colors.black.withOpacity(0.3),
+          color: AppColors.shadowColor(isLight),
           blurRadius: 15,
           offset: const Offset(0, 4),
         ),
@@ -89,6 +90,7 @@ class _SocialButtonState extends State<SocialButton>
   }
 
   Row _buildButtonContent() {
+    final isLight = Theme.of(context).brightness == Brightness.light;
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -101,8 +103,8 @@ class _SocialButtonState extends State<SocialButton>
         const SizedBox(width: 12),
         Text(
           widget.text,
-          style: const TextStyle(
-            color: Colors.white,
+          style: TextStyle(
+            color: AppColors.textPrimaryFor(isLight),
             fontWeight: FontWeight.w500,
             fontSize: 15,
             letterSpacing: 0.3,

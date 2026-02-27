@@ -103,6 +103,7 @@ class _OtpScreenState extends State<OtpScreen>
   }
 
   AppBar _buildAppBar() {
+    final isLight = Theme.of(context).brightness == Brightness.light;
     return AppBar(
       backgroundColor: Colors.transparent,
       elevation: 0,
@@ -111,7 +112,7 @@ class _OtpScreenState extends State<OtpScreen>
       title: Padding(
         padding: const EdgeInsets.only(top: 10),
         child: Image.asset(
-          'logos/name.png',
+          isLight ? 'logos/name1.png' : 'logos/name.png',
           height: 200,
           width: 200,
           fit: BoxFit.contain,
@@ -120,7 +121,12 @@ class _OtpScreenState extends State<OtpScreen>
       leading: Padding(
         padding: const EdgeInsets.only(top: 10),
         child: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          icon: Icon(
+            Icons.arrow_back,
+            color: Theme.of(context).brightness == Brightness.dark
+                ? Colors.white
+                : Colors.black87,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -129,22 +135,21 @@ class _OtpScreenState extends State<OtpScreen>
 
   BoxDecoration _buildGradientDecoration() {
     final isLight = Theme.of(context).brightness == Brightness.light;
-    final colors = isLight
-        ? [AppColors.light1, AppColors.light2]
-        : [const Color(0xFF00365D), Colors.black];
+    final colors = AppColors.gradientColors(isLight);
     return BoxDecoration(gradient: RadialGradient(radius: 1, colors: colors));
   }
 
   Widget _buildFloatingContainer(BuildContext context) {
+    final isLight = Theme.of(context).brightness == Brightness.light;
     return Container(
       constraints: const BoxConstraints(maxWidth: 400),
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1F2E),
+        color: AppColors.containerColor(isLight),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: const Color(0xFF2D3748), width: 1.5),
+        border: Border.all(color: AppColors.borderColor(isLight), width: 1.5),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.4),
+            color: AppColors.shadowColor(isLight),
             blurRadius: 16,
             offset: const Offset(0, 8),
           ),
@@ -194,22 +199,27 @@ class _OtpScreenState extends State<OtpScreen>
   }
 
   Widget _buildHeaderText() {
-    return const Text(
+    final isLight = Theme.of(context).brightness == Brightness.light;
+    return Text(
       "Verify Your Email",
       style: TextStyle(
         fontSize: 28,
         fontWeight: FontWeight.bold,
-        color: Colors.white,
+        color: AppColors.textPrimaryFor(isLight),
         letterSpacing: 0.5,
       ),
     );
   }
 
   Widget _buildSubtitleText() {
+    final isLight = Theme.of(context).brightness == Brightness.light;
     return Text(
       "Enter the 6-digit code sent to your email",
       textAlign: TextAlign.center,
-      style: TextStyle(fontSize: 14, color: Colors.grey[400]),
+      style: TextStyle(
+        fontSize: 14,
+        color: AppColors.textSecondaryFor(isLight),
+      ),
     );
   }
 
@@ -221,13 +231,14 @@ class _OtpScreenState extends State<OtpScreen>
   }
 
   Widget _buildOtpDigit(int index) {
+    final isLight = Theme.of(context).brightness == Brightness.light;
     return Container(
       width: 40,
       height: 50,
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.inputFillColor(isLight),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFF2D3748), width: 1.5),
+        border: Border.all(color: AppColors.borderColor(isLight), width: 1.5),
       ),
       child: TextField(
         controller: _otpControllers[index],
@@ -242,10 +253,10 @@ class _OtpScreenState extends State<OtpScreen>
           border: InputBorder.none,
           contentPadding: EdgeInsets.zero,
         ),
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 24,
           fontWeight: FontWeight.bold,
-          color: Colors.white,
+          color: AppColors.textPrimaryFor(isLight),
         ),
         onChanged: (value) {
           if (value.isNotEmpty) {
@@ -341,12 +352,16 @@ class _OtpScreenState extends State<OtpScreen>
   }
 
   Widget _buildResendOtpLink() {
+    final isLight = Theme.of(context).brightness == Brightness.light;
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        const Text(
+        Text(
           "Didn't receive code? ",
-          style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
+          style: TextStyle(
+            color: AppColors.textSecondaryFor(isLight),
+            fontSize: 14,
+          ),
         ),
         GestureDetector(
           onTap: _isLoading ? null : _resendOtp,

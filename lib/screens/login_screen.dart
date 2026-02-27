@@ -156,6 +156,7 @@ class _LoginScreenState extends State<LoginScreen>
   }
 
   AppBar _buildAppBar() {
+    final isLight = Theme.of(context).brightness == Brightness.light;
     return AppBar(
       backgroundColor: Colors.transparent,
       elevation: 0,
@@ -164,7 +165,7 @@ class _LoginScreenState extends State<LoginScreen>
       title: Padding(
         padding: const EdgeInsets.only(top: 10),
         child: Image.asset(
-          'logos/name.png',
+          isLight ? 'logos/name1.png' : 'logos/name.png',
           height: 200,
           width: 200,
           fit: BoxFit.contain,
@@ -215,16 +216,17 @@ class _LoginScreenState extends State<LoginScreen>
   }
 
   Widget _buildFloatingContainer(BuildContext context) {
+    final isLight = Theme.of(context).brightness == Brightness.light;
     return Container(
       constraints: const BoxConstraints(maxWidth: 320),
       margin: const EdgeInsets.only(top: 20),
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1F2E),
+        color: AppColors.containerColor(isLight),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: const Color(0xFF2D3748), width: 1.5),
+        border: Border.all(color: AppColors.borderColor(isLight), width: 1.5),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.4),
+            color: AppColors.shadowColor(isLight),
             blurRadius: 16,
             offset: const Offset(0, 8),
           ),
@@ -282,21 +284,25 @@ class _LoginScreenState extends State<LoginScreen>
   }
 
   Widget _buildHeaderText() {
+    final isLight = Theme.of(context).brightness == Brightness.light;
     return Column(
       children: [
-        const Text(
+        Text(
           "Welcome Back!",
           style: TextStyle(
             fontSize: 32,
             fontWeight: FontWeight.bold,
-            color: Colors.white,
+            color: AppColors.textPrimaryFor(isLight),
             letterSpacing: 0.5,
           ),
         ),
         const SizedBox(height: 1),
         Text(
           "Log in to your account",
-          style: TextStyle(fontSize: 14, color: Colors.grey[400]),
+          style: TextStyle(
+            fontSize: 14,
+            color: AppColors.textSecondaryFor(isLight),
+          ),
         ),
       ],
     );
@@ -327,10 +333,11 @@ class _LoginScreenState extends State<LoginScreen>
   }
 
   Widget _buildVisibilityToggle() {
+    final isLight = Theme.of(context).brightness == Brightness.light;
     return IconButton(
       icon: Icon(
         _isObscure ? Icons.visibility_off : Icons.visibility,
-        color: AppColors.textSecondary,
+        color: AppColors.iconColor(isLight),
       ),
       onPressed: () => setState(() => _isObscure = !_isObscure),
     );
@@ -378,10 +385,11 @@ class _LoginScreenState extends State<LoginScreen>
   }
 
   Widget _buildSocialLoginDivider() {
-    return const Text(
+    final isLight = Theme.of(context).brightness == Brightness.light;
+    return Text(
       "Or Login with",
       style: TextStyle(
-        color: AppColors.textSecondary,
+        color: AppColors.textSecondaryFor(isLight),
         fontSize: 14,
         letterSpacing: 0.3,
       ),
@@ -514,12 +522,16 @@ class _LoginScreenState extends State<LoginScreen>
   }
 
   Widget _buildSignUpLink(BuildContext context) {
+    final isLight = Theme.of(context).brightness == Brightness.light;
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        const Text(
+        Text(
           "Don't have an account? ",
-          style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
+          style: TextStyle(
+            color: AppColors.textSecondaryFor(isLight),
+            fontSize: 14,
+          ),
         ),
         GestureDetector(
           onTap: () => Navigator.pushNamed(context, '/signup'),

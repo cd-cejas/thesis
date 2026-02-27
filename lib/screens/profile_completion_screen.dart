@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:provider/provider.dart';
 import '../theme/app_colors.dart';
-import '../theme/theme_provider.dart';
 import '../widgets/terms_modal.dart';
 
 class ProfileCompletionScreen extends StatefulWidget {
@@ -78,6 +76,7 @@ class _ProfileCompletionScreenState extends State<ProfileCompletionScreen>
   }
 
   Future<void> _selectDate(BuildContext context) async {
+    final isLight = Theme.of(context).brightness == Brightness.light;
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: DateTime(2010),
@@ -86,12 +85,19 @@ class _ProfileCompletionScreenState extends State<ProfileCompletionScreen>
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.dark(
-              primary: AppColors.primary,
-              onPrimary: Colors.black,
-              surface: Color(0xFF1A1F2E),
-              onSurface: Colors.white,
-            ),
+            colorScheme: isLight
+                ? ColorScheme.light(
+                    primary: AppColors.primary,
+                    onPrimary: AppColors.light4,
+                    surface: Colors.white,
+                    onSurface: AppColors.light4,
+                  )
+                : const ColorScheme.dark(
+                    primary: AppColors.primary,
+                    onPrimary: Colors.black,
+                    surface: Color(0xFF1A1F2E),
+                    onSurface: Colors.white,
+                  ),
           ),
           child: child!,
         );
@@ -157,6 +163,7 @@ class _ProfileCompletionScreenState extends State<ProfileCompletionScreen>
   }
 
   AppBar _buildAppBar() {
+    final isLight = Theme.of(context).brightness == Brightness.light;
     return AppBar(
       backgroundColor: Colors.transparent,
       elevation: 0,
@@ -165,7 +172,7 @@ class _ProfileCompletionScreenState extends State<ProfileCompletionScreen>
       title: Padding(
         padding: const EdgeInsets.only(top: 10),
         child: Image.asset(
-          'logos/name.png',
+          isLight ? 'logos/name1.png' : 'logos/name.png',
           height: 200,
           width: 200,
           fit: BoxFit.contain,
@@ -183,27 +190,6 @@ class _ProfileCompletionScreenState extends State<ProfileCompletionScreen>
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      actions: [
-        Padding(
-          padding: const EdgeInsets.only(right: 16, top: 10),
-          child: IconButton(
-            icon: Consumer<ThemeProvider>(
-              builder: (context, themeProvider, _) {
-                return Icon(
-                  themeProvider.isDarkMode ? Icons.light_mode : Icons.dark_mode,
-                  color: themeProvider.isDarkMode
-                      ? Colors.white
-                      : Colors.black87,
-                );
-              },
-            ),
-            onPressed: () {
-              Provider.of<ThemeProvider>(context, listen: false).toggleTheme();
-            },
-            tooltip: 'Toggle Theme',
-          ),
-        ),
-      ],
     );
   }
 
@@ -216,16 +202,17 @@ class _ProfileCompletionScreenState extends State<ProfileCompletionScreen>
   }
 
   Widget _buildFloatingContainer(BuildContext context) {
+    final isLight = Theme.of(context).brightness == Brightness.light;
     return Container(
       constraints: const BoxConstraints(maxWidth: 360),
       margin: const EdgeInsets.only(top: 32),
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1F2E),
+        color: AppColors.containerColor(isLight),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: const Color(0xFF2D3748), width: 1.5),
+        border: Border.all(color: AppColors.borderColor(isLight), width: 1.5),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.4),
+            color: AppColors.shadowColor(isLight),
             blurRadius: 16,
             offset: const Offset(0, 8),
           ),
@@ -284,12 +271,13 @@ class _ProfileCompletionScreenState extends State<ProfileCompletionScreen>
   }
 
   Widget _buildHeaderText() {
-    return const Text(
+    final isLight = Theme.of(context).brightness == Brightness.light;
+    return Text(
       "Complete Your Profile",
       style: TextStyle(
         fontSize: 28,
         fontWeight: FontWeight.bold,
-        color: Colors.white,
+        color: AppColors.textPrimaryFor(isLight),
         letterSpacing: 0.5,
       ),
     );
@@ -342,27 +330,30 @@ class _ProfileCompletionScreenState extends State<ProfileCompletionScreen>
   }
 
   Widget _buildSexDropdown() {
+    final isLight = Theme.of(context).brightness == Brightness.light;
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.inputFillColor(isLight),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFF2D3748), width: 1),
+        border: Border.all(color: AppColors.borderColor(isLight), width: 1),
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16),
         child: Row(
           children: [
-            const Icon(Icons.wc, color: AppColors.textSecondary),
+            Icon(Icons.wc, color: AppColors.iconColor(isLight)),
             const SizedBox(width: 12),
             Expanded(
               child: DropdownButton<String>(
                 value: _selectedSex,
-                hint: const Text(
+                hint: Text(
                   'Sex',
-                  style: TextStyle(color: AppColors.textSecondary),
+                  style: TextStyle(color: AppColors.textSecondaryFor(isLight)),
                 ),
                 isExpanded: true,
                 underline: const SizedBox(),
+                dropdownColor: AppColors.surfaceFor(isLight),
+                style: TextStyle(color: AppColors.textPrimaryFor(isLight)),
                 items: _sexOptions.map((String value) {
                   return DropdownMenuItem<String>(
                     value: value,
@@ -394,27 +385,30 @@ class _ProfileCompletionScreenState extends State<ProfileCompletionScreen>
   }
 
   Widget _buildGradeLevelDropdown() {
+    final isLight = Theme.of(context).brightness == Brightness.light;
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.inputFillColor(isLight),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFF2D3748), width: 1),
+        border: Border.all(color: AppColors.borderColor(isLight), width: 1),
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16),
         child: Row(
           children: [
-            const Icon(Icons.school_outlined, color: AppColors.textSecondary),
+            Icon(Icons.school_outlined, color: AppColors.iconColor(isLight)),
             const SizedBox(width: 12),
             Expanded(
               child: DropdownButton<String>(
                 value: _selectedGradeLevel,
-                hint: const Text(
+                hint: Text(
                   'Grade Level',
-                  style: TextStyle(color: AppColors.textSecondary),
+                  style: TextStyle(color: AppColors.textSecondaryFor(isLight)),
                 ),
                 isExpanded: true,
                 underline: const SizedBox(),
+                dropdownColor: AppColors.surfaceFor(isLight),
+                style: TextStyle(color: AppColors.textPrimaryFor(isLight)),
                 items: _gradeLevels.map((String value) {
                   return DropdownMenuItem<String>(
                     value: value,
@@ -435,6 +429,7 @@ class _ProfileCompletionScreenState extends State<ProfileCompletionScreen>
   }
 
   Widget _buildTermsCheckbox() {
+    final isLight = Theme.of(context).brightness == Brightness.light;
     return GestureDetector(
       onTap: _isLoading ? null : _showTermsModal,
       child: Row(
@@ -442,15 +437,18 @@ class _ProfileCompletionScreenState extends State<ProfileCompletionScreen>
           Checkbox(
             value: _agreeToTerms,
             activeColor: AppColors.primary,
-            side: const BorderSide(color: Color(0xFF2D3748), width: 1.5),
+            side: BorderSide(color: AppColors.borderColor(isLight), width: 1.5),
             onChanged: _isLoading
                 ? null
                 : (val) => setState(() => _agreeToTerms = val ?? false),
           ),
-          const Expanded(
+          Expanded(
             child: Text(
               "I agree to the Terms of Service",
-              style: TextStyle(color: Colors.white, fontSize: 14),
+              style: TextStyle(
+                color: AppColors.textPrimaryFor(isLight),
+                fontSize: 14,
+              ),
             ),
           ),
         ],

@@ -75,10 +75,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isLight = Theme.of(context).brightness == Brightness.light;
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: _buildAppBar(),
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.backgroundFor(isLight),
 
       // Floating "EVALUATE" Button at the bottom
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
@@ -127,7 +128,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   height: 180,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(20),
-                    color: AppColors.surface, // Placeholder background color
+                    color: AppColors.surfaceFor(
+                      isLight,
+                    ), // Placeholder background color
                     image: const DecorationImage(
                       image: AssetImage('logos/banner.png'),
                       fit: BoxFit.cover,
@@ -139,10 +142,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 // --- 3. Search Bar ---
                 TextField(
                   controller: _searchController,
-                  style: const TextStyle(color: Colors.white),
+                  style: TextStyle(color: AppColors.textPrimaryFor(isLight)),
                   decoration: InputDecoration(
                     hintText: "What career is best for me?",
-                    hintStyle: const TextStyle(color: Colors.white54),
+                    hintStyle: TextStyle(
+                      color: AppColors.textSecondaryFor(isLight),
+                    ),
                     suffixIcon: IconButton(
                       icon: const Icon(Icons.search, color: AppColors.primary),
                       onPressed: () {
@@ -157,9 +162,11 @@ class _HomeScreenState extends State<HomeScreen> {
                       },
                     ),
                     filled: true,
-                    fillColor: Colors.black.withOpacity(
-                      0.2,
-                    ), // Dark background for search
+                    fillColor: isLight
+                        ? AppColors.light2.withOpacity(0.3)
+                        : Colors.black.withOpacity(
+                            0.2,
+                          ), // background for search
                     contentPadding: const EdgeInsets.only(left: 15, right: 15),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(30),
@@ -192,8 +199,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       },
                       child: Text(
                         text,
-                        style: const TextStyle(
-                          color: AppColors.textSecondary,
+                        style: TextStyle(
+                          color: AppColors.textSecondaryFor(isLight),
                           fontSize: 13,
                           height: 1.4,
                         ),
@@ -205,10 +212,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 const SizedBox(height: 8),
 
                 // --- 5. Professions Header ---
-                const Text(
+                Text(
                   "PROFESSIONS",
                   style: TextStyle(
-                    color: Colors.white,
+                    color: AppColors.textPrimaryFor(isLight),
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
                     letterSpacing: 1,
@@ -253,6 +260,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   AppBar _buildAppBar() {
+    final isLight = Theme.of(context).brightness == Brightness.light;
     return AppBar(
       backgroundColor: Colors.transparent,
       elevation: 0,
@@ -260,21 +268,54 @@ class _HomeScreenState extends State<HomeScreen> {
       toolbarHeight: 60,
       leading: Padding(
         padding: const EdgeInsets.only(left: 8, top: 10),
-        child: IconButton(
-          icon: Icon(
-            Icons.logout,
-            color: Theme.of(context).brightness == Brightness.dark
-                ? Colors.white
-                : Colors.black87,
-          ),
-          onPressed: _logout,
-          tooltip: 'Logout',
+        child: PopupMenuButton<String>(
+          icon: Icon(Icons.person, color: AppColors.textPrimaryFor(isLight)),
+          onSelected: (value) {
+            if (value == 'profile') {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Profile - Coming Soon')),
+              );
+            } else if (value == 'settings') {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Settings - Coming Soon')),
+              );
+            } else if (value == 'logout') {
+              _logout();
+            }
+          },
+          itemBuilder: (BuildContext context) => [
+            PopupMenuItem<String>(
+              value: 'profile',
+              child: Text(
+                'Profile',
+                style: TextStyle(color: AppColors.textPrimaryFor(isLight)),
+              ),
+            ),
+            PopupMenuItem<String>(
+              value: 'settings',
+              child: Text(
+                'Settings',
+                style: TextStyle(color: AppColors.textPrimaryFor(isLight)),
+              ),
+            ),
+            PopupMenuItem<String>(
+              value: 'logout',
+              child: Text(
+                'Logout',
+                style: TextStyle(
+                  color: Colors.red,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+          color: AppColors.surfaceFor(isLight),
         ),
       ),
       title: Padding(
         padding: const EdgeInsets.only(top: 10),
         child: Image.asset(
-          'logos/name.png',
+          isLight ? 'logos/name1.png' : 'logos/name.png',
           height: 200,
           width: 200,
           fit: BoxFit.contain,

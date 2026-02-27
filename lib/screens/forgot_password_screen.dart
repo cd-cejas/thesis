@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:provider/provider.dart';
 import '../theme/app_colors.dart';
-import '../theme/theme_provider.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -145,6 +143,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
   }
 
   AppBar _buildAppBar() {
+    final isLight = Theme.of(context).brightness == Brightness.light;
     return AppBar(
       backgroundColor: Colors.transparent,
       elevation: 0,
@@ -153,7 +152,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
       title: Padding(
         padding: const EdgeInsets.only(top: 10),
         child: Image.asset(
-          'logos/name.png',
+          isLight ? 'logos/name1.png' : 'logos/name.png',
           height: 200,
           width: 200,
           fit: BoxFit.contain,
@@ -171,48 +170,26 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      actions: [
-        Padding(
-          padding: const EdgeInsets.only(right: 16, top: 10),
-          child: IconButton(
-            icon: Consumer<ThemeProvider>(
-              builder: (context, themeProvider, _) {
-                return Icon(
-                  themeProvider.isDarkMode ? Icons.light_mode : Icons.dark_mode,
-                  color: themeProvider.isDarkMode
-                      ? Colors.white
-                      : Colors.black87,
-                );
-              },
-            ),
-            onPressed: () {
-              Provider.of<ThemeProvider>(context, listen: false).toggleTheme();
-            },
-            tooltip: 'Toggle Theme',
-          ),
-        ),
-      ],
     );
   }
 
   BoxDecoration _buildGradientDecoration() {
     final isLight = Theme.of(context).brightness == Brightness.light;
-    final colors = isLight
-        ? [AppColors.light1, AppColors.light2]
-        : [const Color(0xFF00365D), Colors.black];
+    final colors = AppColors.gradientColors(isLight);
     return BoxDecoration(gradient: RadialGradient(radius: 1, colors: colors));
   }
 
   Widget _buildFloatingContainer(BuildContext context) {
+    final isLight = Theme.of(context).brightness == Brightness.light;
     return Container(
       constraints: const BoxConstraints(maxWidth: 350),
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1F2E),
+        color: AppColors.containerColor(isLight),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: const Color(0xFF2D3748), width: 1.5),
+        border: Border.all(color: AppColors.borderColor(isLight), width: 1.5),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.4),
+            color: AppColors.shadowColor(isLight),
             blurRadius: 16,
             offset: const Offset(0, 8),
           ),
@@ -276,22 +253,27 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
   }
 
   Widget _buildHeaderText() {
-    return const Text(
+    final isLight = Theme.of(context).brightness == Brightness.light;
+    return Text(
       "Reset Password",
       style: TextStyle(
         fontSize: 28,
         fontWeight: FontWeight.bold,
-        color: Colors.white,
+        color: AppColors.textPrimaryFor(isLight),
         letterSpacing: 0.5,
       ),
     );
   }
 
   Widget _buildSubtitleText() {
+    final isLight = Theme.of(context).brightness == Brightness.light;
     return Text(
       "Enter your email address to receive a password reset link.",
       textAlign: TextAlign.center,
-      style: TextStyle(fontSize: 14, color: Colors.grey[400]),
+      style: TextStyle(
+        fontSize: 14,
+        color: AppColors.textSecondaryFor(isLight),
+      ),
     );
   }
 
@@ -328,12 +310,16 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
   }
 
   Widget _buildBackToLoginLink(BuildContext context) {
+    final isLight = Theme.of(context).brightness == Brightness.light;
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        const Text(
+        Text(
           "Remember your password? ",
-          style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
+          style: TextStyle(
+            color: AppColors.textSecondaryFor(isLight),
+            fontSize: 14,
+          ),
         ),
         GestureDetector(
           onTap: () => Navigator.pop(context),

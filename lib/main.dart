@@ -116,14 +116,14 @@ class MyApp extends StatelessWidget {
   ThemeData _lightTheme() {
     return ThemeData(
       brightness: Brightness.light,
-      scaffoldBackgroundColor: const Color(0xFFF5F8FA),
-      primaryColor: const Color(0xFF06D9FF),
+      scaffoldBackgroundColor: AppColors.light1,
+      primaryColor: AppColors.primary,
       fontFamily: 'Google Sans',
       useMaterial3: true,
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF06D9FF),
-          foregroundColor: Colors.white,
+          backgroundColor: AppColors.primary,
+          foregroundColor: AppColors.light4,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
@@ -139,25 +139,25 @@ class MyApp extends StatelessWidget {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: Colors.white,
-        hintStyle: const TextStyle(color: Color(0xFF90A0A0), fontSize: 14),
+        hintStyle: TextStyle(color: AppColors.light3, fontSize: 14),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFFE0E8F0), width: 1),
+          borderSide: BorderSide(color: AppColors.light2, width: 1),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF06D9FF), width: 2),
+          borderSide: const BorderSide(color: AppColors.primary, width: 2),
         ),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 20,
           vertical: 16,
         ),
-        prefixIconColor: const Color(0xFF90A0A0),
-        suffixIconColor: const Color(0xFF90A0A0),
+        prefixIconColor: AppColors.light3,
+        suffixIconColor: AppColors.light3,
       ),
     );
   }

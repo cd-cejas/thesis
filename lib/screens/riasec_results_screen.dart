@@ -51,26 +51,33 @@ class _RiasecResultsScreenState extends State<RiasecResultsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isLight = Theme.of(context).brightness == Brightness.light;
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          icon: Icon(
+            Icons.arrow_back,
+            color: AppColors.textPrimaryFor(isLight),
+          ),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           "Your Career Profile",
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            color: AppColors.textPrimaryFor(isLight),
+            fontWeight: FontWeight.bold,
+          ),
         ),
         centerTitle: true,
       ),
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.backgroundFor(isLight),
       body: Container(
         decoration: BoxDecoration(
           gradient: RadialGradient(
             radius: 1,
-            colors: [const Color(0xFF00365D), Colors.black],
+            colors: AppColors.gradientColors(isLight),
           ),
         ),
         child: SafeArea(
@@ -102,10 +109,10 @@ class _RiasecResultsScreenState extends State<RiasecResultsScreen> {
                         size: 48,
                       ),
                       const SizedBox(height: 12),
-                      const Text(
+                      Text(
                         "Test Completed!",
                         style: TextStyle(
-                          color: Colors.white,
+                          color: AppColors.textPrimaryFor(isLight),
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
                           letterSpacing: 1,
@@ -115,7 +122,10 @@ class _RiasecResultsScreenState extends State<RiasecResultsScreen> {
                       Text(
                         "Here are your personalized career recommendations",
                         textAlign: TextAlign.center,
-                        style: TextStyle(color: Colors.grey[400], fontSize: 14),
+                        style: TextStyle(
+                          color: AppColors.textSecondaryFor(isLight),
+                          fontSize: 14,
+                        ),
                       ),
                     ],
                   ),
@@ -168,8 +178,8 @@ class _RiasecResultsScreenState extends State<RiasecResultsScreen> {
                       const SizedBox(height: 16),
                       Text(
                         topCareer,
-                        style: const TextStyle(
-                          color: Colors.white,
+                        style: TextStyle(
+                          color: AppColors.textPrimaryFor(isLight),
                           fontSize: 28,
                           fontWeight: FontWeight.bold,
                           letterSpacing: 1,
@@ -180,7 +190,7 @@ class _RiasecResultsScreenState extends State<RiasecResultsScreen> {
                         "Based on your RIASEC profile, this career path aligns perfectly "
                         "with your strengths and interests.",
                         style: TextStyle(
-                          color: Colors.grey[400],
+                          color: AppColors.textSecondaryFor(isLight),
                           fontSize: 13,
                           height: 1.6,
                         ),
@@ -223,10 +233,10 @@ class _RiasecResultsScreenState extends State<RiasecResultsScreen> {
                           size: 24,
                         ),
                         const SizedBox(width: 12),
-                        const Text(
+                        Text(
                           "Recommended Courses",
                           style: TextStyle(
-                            color: Colors.white,
+                            color: AppColors.textPrimaryFor(isLight),
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
                             letterSpacing: 0.5,
@@ -317,10 +327,11 @@ class _RiasecResultsScreenState extends State<RiasecResultsScreen> {
   }
 
   Widget _buildCourseCard(String course, int position) {
+    final isLight = Theme.of(context).brightness == Brightness.light;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.08),
+        color: AppColors.cardOverlay(isLight),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: AppColors.primary.withOpacity(0.3), width: 1),
       ),
@@ -356,8 +367,8 @@ class _RiasecResultsScreenState extends State<RiasecResultsScreen> {
               children: [
                 Text(
                   course,
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: AppColors.textPrimaryFor(isLight),
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                   ),
@@ -365,7 +376,10 @@ class _RiasecResultsScreenState extends State<RiasecResultsScreen> {
                 const SizedBox(height: 4),
                 Text(
                   "Highly Recommended",
-                  style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                  style: TextStyle(
+                    color: AppColors.textSecondaryFor(isLight),
+                    fontSize: 12,
+                  ),
                 ),
               ],
             ),
