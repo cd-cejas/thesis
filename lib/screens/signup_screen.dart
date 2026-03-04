@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import '../otp_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/social_buttons.dart';
 
@@ -66,6 +67,8 @@ class _SignupScreenState extends State<SignupScreen>
     super.dispose();
   }
 
+  final OtpService _otpService = OtpService();
+
   Future<void> _signup() async {
     if (_isLoading) return;
 
@@ -73,7 +76,8 @@ class _SignupScreenState extends State<SignupScreen>
 
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
-    final confirmPassword = _confirmPasswordController.text.trim();
+    // confirmPassword is validated by the form validator below
+    _confirmPasswordController.text.trim();
 
     final isValid = _formKey.currentState?.validate() ?? false;
     if (!isValid) {
@@ -86,17 +90,34 @@ class _SignupScreenState extends State<SignupScreen>
     });
 
     try {
-      await _auth.createUserWithEmailAndPassword(
+      final userCredential = await _auth.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
 
+      final uid = userCredential.user!.uid;
+
+      // Send OTP — show warning snackbar if EmailJS isn't configured yet
+      final otpError = await _otpService.sendOtp(uid: uid, email: email);
+
       if (!mounted) return;
       setState(() => _isLoading = false);
-      Navigator.pushNamedAndRemoveUntil(
+
+      if (otpError != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(otpError, style: const TextStyle(fontSize: 12)),
+            backgroundColor: Colors.orange,
+            duration: const Duration(seconds: 6),
+          ),
+        );
+      }
+
+      // Navigate to OTP verification screen regardless
+      Navigator.pushNamed(
         context,
-        '/profile_completion',
-        (route) => false,
+        '/otp',
+        arguments: {'email': email, 'uid': uid},
       );
     } on FirebaseAuthException catch (e) {
       if (!mounted) return;
@@ -120,9 +141,8 @@ class _SignupScreenState extends State<SignupScreen>
     });
 
     try {
-      UserCredential credential;
       if (kIsWeb) {
-        credential = await _auth.signInWithPopup(GoogleAuthProvider());
+        await _auth.signInWithPopup(GoogleAuthProvider());
       } else {
         final googleUser = await _googleSignIn.signIn();
         if (googleUser == null) {
@@ -136,7 +156,7 @@ class _SignupScreenState extends State<SignupScreen>
           idToken: googleAuth.idToken,
         );
 
-        credential = await _auth.signInWithCredential(oauthCredential);
+        await _auth.signInWithCredential(oauthCredential);
       }
 
       if (mounted) {

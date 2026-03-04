@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../otp_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/terms_modal.dart';
 
@@ -32,8 +33,21 @@ class _ProfileCompletionScreenState extends State<ProfileCompletionScreen>
   final List<String> _gradeLevels = ['Grade 11', 'Grade 12'];
   bool _isLoading = false;
   String? _errorMessage;
+  bool _isCancelling = false;
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final OtpService _otpService = OtpService();
+
+  /// Deletes the unverified account and navigates back to signup.
+  Future<void> _deleteAccountAndGoBack() async {
+    if (_isCancelling) return;
+    setState(() => _isCancelling = true);
+
+    await _otpService.deleteUnverifiedAccount();
+
+    if (!mounted) return;
+    Navigator.pushNamedAndRemoveUntil(context, '/signup', (route) => false);
+  }
 
   @override
   void initState() {
@@ -76,6 +90,7 @@ class _ProfileCompletionScreenState extends State<ProfileCompletionScreen>
   }
 
   Future<void> _selectDate(BuildContext context) async {
+    //calendar for birthday
     final isLight = Theme.of(context).brightness == Brightness.light;
     final DateTime? picked = await showDatePicker(
       context: context,
@@ -113,6 +128,7 @@ class _ProfileCompletionScreenState extends State<ProfileCompletionScreen>
   }
 
   void _showTermsModal() {
+    //terms
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -124,38 +140,51 @@ class _ProfileCompletionScreenState extends State<ProfileCompletionScreen>
 
   @override
   Widget build(BuildContext context) {
+    //bottom credits
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
-    return Scaffold(
-      extendBodyBehindAppBar: true,
-      appBar: _buildAppBar(),
-      body: SafeArea(
-        child: Container(
-          decoration: _buildGradientDecoration(),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Expanded(
-                child: Center(
-                  child: SingleChildScrollView(
-                    padding: EdgeInsets.fromLTRB(24, 0, 24, bottomInset + 24),
-                    child: FadeTransition(
-                      opacity: _fadeAnimation,
-                      child: SlideTransition(
-                        position: _slideAnimation,
-                        child: _buildFloatingContainer(context),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) {
+          _deleteAccountAndGoBack();
+        }
+      },
+      child: Scaffold(
+        extendBodyBehindAppBar: true,
+        appBar: _buildAppBar(),
+        body: SafeArea(
+          child: Container(
+            decoration: _buildGradientDecoration(),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Expanded(
+                  child: Center(
+                    child: SingleChildScrollView(
+                      padding: EdgeInsets.fromLTRB(24, 0, 24, bottomInset + 24),
+                      child: FadeTransition(
+                        opacity: _fadeAnimation,
+                        child: SlideTransition(
+                          position: _slideAnimation,
+                          child: _buildFloatingContainer(context),
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
-              Padding(
-                padding: const EdgeInsets.only(left: 24, right: 24, bottom: 16),
-                child: Text(
-                  "Developed By: Carl Dindo L. Cejas & Joshua Jhon Juariza",
-                  style: TextStyle(fontSize: 8, color: Colors.grey[600]),
+                Padding(
+                  padding: const EdgeInsets.only(
+                    left: 24,
+                    right: 24,
+                    bottom: 16,
+                  ),
+                  child: Text(
+                    "Developed By: Carl Dindo L. Cejas & Joshua Jhon Juariza",
+                    style: TextStyle(fontSize: 8, color: Colors.grey[600]),
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -163,6 +192,7 @@ class _ProfileCompletionScreenState extends State<ProfileCompletionScreen>
   }
 
   AppBar _buildAppBar() {
+    //appbar
     final isLight = Theme.of(context).brightness == Brightness.light;
     return AppBar(
       backgroundColor: Colors.transparent,
@@ -187,13 +217,14 @@ class _ProfileCompletionScreenState extends State<ProfileCompletionScreen>
                 ? Colors.white
                 : Colors.black87,
           ),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => _deleteAccountAndGoBack(),
         ),
       ),
     );
   }
 
   BoxDecoration _buildGradientDecoration() {
+    //background color
     final isLight = Theme.of(context).brightness == Brightness.light;
     final colors = isLight
         ? [AppColors.light1, AppColors.light2]
@@ -202,6 +233,7 @@ class _ProfileCompletionScreenState extends State<ProfileCompletionScreen>
   }
 
   Widget _buildFloatingContainer(BuildContext context) {
+    //floating container for form fields
     final isLight = Theme.of(context).brightness == Brightness.light;
     return Container(
       constraints: const BoxConstraints(maxWidth: 360),
@@ -232,6 +264,7 @@ class _ProfileCompletionScreenState extends State<ProfileCompletionScreen>
   }
 
   List<Widget> _buildFormContent(BuildContext context) {
+    //form calls
     return [
       _buildHeaderText(),
       const SizedBox(height: 20),
@@ -480,6 +513,7 @@ class _ProfileCompletionScreenState extends State<ProfileCompletionScreen>
   }
 
   bool _isFormValid() {
+    //validations for form fields
     return _firstNameController.text.isNotEmpty &&
         _lastNameController.text.isNotEmpty &&
         _birthdayController.text.isNotEmpty &&
@@ -490,6 +524,7 @@ class _ProfileCompletionScreenState extends State<ProfileCompletionScreen>
   }
 
   Future<void> _completeProfile(BuildContext context) async {
+    //validations and saving to firestore
     if (!_isFormValid()) {
       setState(() {
         _errorMessage = 'Please complete all fields and agree to the Terms.';

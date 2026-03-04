@@ -5,8 +5,16 @@ import '../theme/app_colors.dart';
 class AiChatbotScreen extends StatefulWidget {
   final String? profession;
   final String? initialQuery;
+  final String? backgroundPrompt;
+  final bool autoSend;
 
-  const AiChatbotScreen({super.key, this.profession, this.initialQuery});
+  const AiChatbotScreen({
+    super.key,
+    this.profession,
+    this.initialQuery,
+    this.backgroundPrompt,
+    this.autoSend = false,
+  });
 
   @override
   State<AiChatbotScreen> createState() => _AiChatbotScreenState();
@@ -33,27 +41,67 @@ class _AiChatbotScreenState extends State<AiChatbotScreen> {
       'content': DeepSeekService.systemPrompt,
     });
 
-    // Build initial greeting based on context
-    String greeting;
-    if (widget.profession != null) {
-      greeting =
-          "I see you're interested in ${widget.profession}. What courses would "
-          "you like to know about in this field?";
-      // Add context to API history so the AI knows the user's interest
-      _apiMessageHistory.add({'role': 'assistant', 'content': greeting});
-    } else if (widget.initialQuery != null) {
-      greeting =
-          'I\'ll help you find the best information about "${widget.initialQuery}". '
-          'What would you like to know?';
-      _apiMessageHistory.add({'role': 'assistant', 'content': greeting});
+    if (widget.backgroundPrompt != null) {
+      // Send hidden prompt in the background; AI response is the first visible message
+      Future.microtask(() => _sendBackgroundPrompt(widget.backgroundPrompt!));
+    } else if (widget.autoSend && widget.initialQuery != null) {
+      // Auto-send the search query as a visible user message
+      Future.microtask(() => _autoSendMessage(widget.initialQuery!));
     } else {
-      greeting =
-          "Hello! I'm your AI Career Guidance Assistant. Ask me anything about "
-          "careers, colleges, or courses that interest you!";
-      _apiMessageHistory.add({'role': 'assistant', 'content': greeting});
+      // Default greeting
+      String greeting;
+      if (widget.profession != null) {
+        greeting =
+            "I see you're interested in ${widget.profession}. What courses would "
+            "you like to know about in this field?";
+        _apiMessageHistory.add({'role': 'assistant', 'content': greeting});
+      } else if (widget.initialQuery != null) {
+        greeting =
+            'I\'ll help you find the best information about "${widget.initialQuery}". '
+            'What would you like to know?';
+        _apiMessageHistory.add({'role': 'assistant', 'content': greeting});
+      } else {
+        greeting =
+            "Hello! I'm your AI Career Guidance Assistant. Ask me anything about "
+            "careers, colleges, or courses that interest you!";
+        _apiMessageHistory.add({'role': 'assistant', 'content': greeting});
+      }
+      _addBotMessage(greeting);
     }
+  }
 
-    _addBotMessage(greeting);
+  /// Sends [prompt] silently to the AI (not shown as a user bubble).
+  /// The AI's response becomes the first visible chat message.
+  Future<void> _sendBackgroundPrompt(String prompt) async {
+    setState(() => _isLoading = true);
+    _apiMessageHistory.add({'role': 'user', 'content': prompt});
+    final response = await _deepSeekService.sendMessage(_apiMessageHistory);
+    setState(() => _isLoading = false);
+    if (response.startsWith('Error:')) {
+      _apiMessageHistory.removeLast();
+      _addBotMessage(
+        'Sorry, I encountered an issue connecting to the AI. Please try again.',
+      );
+    } else {
+      _apiMessageHistory.add({'role': 'assistant', 'content': response});
+      _addBotMessage(response);
+    }
+  }
+
+  /// Sends [message] as a visible user bubble and fetches AI response.
+  Future<void> _autoSendMessage(String message) async {
+    _addUserMessage(message);
+    _apiMessageHistory.add({'role': 'user', 'content': message});
+    setState(() => _isLoading = true);
+    final response = await _deepSeekService.sendMessage(_apiMessageHistory);
+    setState(() => _isLoading = false);
+    if (response.startsWith('Error:')) {
+      _apiMessageHistory.removeLast();
+      _addBotMessage('Sorry, I encountered an issue. Please try again.');
+    } else {
+      _apiMessageHistory.add({'role': 'assistant', 'content': response});
+      _addBotMessage(response);
+    }
   }
 
   void _addBotMessage(String message) {

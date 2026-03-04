@@ -6,6 +6,7 @@ import 'theme/app_colors.dart';
 import 'theme/theme_provider.dart';
 import 'screens/login_screen.dart';
 import 'screens/signup_screen.dart';
+import 'screens/otp_screen.dart';
 import 'screens/forgot_password_screen.dart';
 import 'screens/profile_completion_screen.dart';
 import 'screens/home_screen.dart';
@@ -39,6 +40,13 @@ class MyApp extends StatelessWidget {
           routes: {
             '/': (context) => const LoginScreen(),
             '/signup': (context) => const SignupScreen(),
+            '/otp': (context) {
+              final args = ModalRoute.of(context)?.settings.arguments as Map?;
+              return OtpScreen(
+                email: args?['email'] as String? ?? '',
+                uid: args?['uid'] as String? ?? '',
+              );
+            },
             '/forgot_password': (context) => const ForgotPasswordScreen(),
             '/profile_completion': (context) => const ProfileCompletionScreen(),
             '/home': (context) => const HomeScreen(),
@@ -48,6 +56,8 @@ class MyApp extends StatelessWidget {
               return AiChatbotScreen(
                 profession: args?['profession'] as String?,
                 initialQuery: args?['initialQuery'] as String?,
+                backgroundPrompt: args?['backgroundPrompt'] as String?,
+                autoSend: args?['autoSend'] as bool? ?? false,
               );
             },
             '/riasec_results': (context) {

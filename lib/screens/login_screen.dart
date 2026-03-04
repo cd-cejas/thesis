@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import 'package:provider/provider.dart';
@@ -64,6 +65,41 @@ class _LoginScreenState extends State<LoginScreen>
     super.dispose();
   }
 
+  /// Checks if the logged-in user has a completed Firestore profile.
+  /// If yes → navigate to /home.
+  /// If no → delete the dangling account and show error.
+  Future<bool> _checkProfileAndNavigate() async {
+    final user = _auth.currentUser;
+    if (user == null) return false;
+
+    final profileDoc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .get();
+
+    if (!profileDoc.exists) {
+      // Incomplete signup — clean up
+      try {
+        await user.delete();
+      } catch (_) {
+        await _auth.signOut();
+      }
+
+      if (!mounted) return false;
+      setState(() {
+        _errorMessage =
+            'This account was not fully registered. Please sign up again.';
+        _isLoading = false;
+      });
+      return false;
+    }
+
+    if (mounted) {
+      Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
+    }
+    return true;
+  }
+
   Future<void> _login() async {
     setState(() {
       _isLoading = true;
@@ -84,9 +120,7 @@ class _LoginScreenState extends State<LoginScreen>
 
       await _auth.signInWithEmailAndPassword(email: email, password: password);
 
-      if (mounted) {
-        Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
-      }
+      await _checkProfileAndNavigate();
     } on FirebaseAuthException catch (e) {
       setState(() {
         _errorMessage = _getErrorMessage(e.code);
@@ -424,9 +458,7 @@ class _LoginScreenState extends State<LoginScreen>
         credential = await _auth.signInWithCredential(oauthCredential);
       }
 
-      if (mounted) {
-        Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
-      }
+      await _checkProfileAndNavigate();
     } on FirebaseAuthException catch (e) {
       setState(() {
         _errorMessage = _getErrorMessage(e.code);
@@ -452,9 +484,7 @@ class _LoginScreenState extends State<LoginScreen>
           FacebookAuthProvider(),
         );
 
-        if (mounted) {
-          Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
-        }
+        await _checkProfileAndNavigate();
         return userCredential;
       } else {
         // 1. Trigger the Facebook sign-in flow
@@ -471,13 +501,7 @@ class _LoginScreenState extends State<LoginScreen>
           // 3. Sign in with Firebase using the credential
           final userCredential = await _auth.signInWithCredential(credential);
 
-          if (mounted) {
-            Navigator.pushNamedAndRemoveUntil(
-              context,
-              '/home',
-              (route) => false,
-            );
-          }
+          await _checkProfileAndNavigate();
           return userCredential;
         }
 

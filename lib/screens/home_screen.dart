@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
 import '../theme/app_colors.dart';
 import '../theme/theme_provider.dart';
@@ -14,6 +15,53 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final TextEditingController _searchController = TextEditingController();
   final FirebaseAuth _auth = FirebaseAuth.instance;
+
+  int _selectedNavIndex = 0;
+  String _userName = '';
+  String _userAddress = '';
+  String _userAge = '';
+  String _userGradeLevel = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchUserData();
+  }
+
+  Future<void> _fetchUserData() async {
+    try {
+      final user = _auth.currentUser;
+      if (user != null) {
+        final doc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .get();
+        if (doc.exists && mounted) {
+          final data = doc.data()!;
+          setState(() {
+            final first = data['firstName'] as String? ?? '';
+            final last = data['lastName'] as String? ?? '';
+            _userName = '$first $last'.trim();
+            _userAddress = data['address'] as String? ?? '';
+            _userGradeLevel = data['gradeLevel'] as String? ?? '';
+            final birthday = data['birthday'] as String?;
+            if (birthday != null && birthday.isNotEmpty) {
+              final bDate = DateTime.tryParse(birthday);
+              if (bDate != null) {
+                final now = DateTime.now();
+                int age = now.year - bDate.year;
+                if (now.month < bDate.month ||
+                    (now.month == bDate.month && now.day < bDate.day)) {
+                  age--;
+                }
+                _userAge = age.toString();
+              }
+            }
+          });
+        }
+      }
+    } catch (_) {}
+  }
 
   Future<void> _logout() async {
     await _auth.signOut();
@@ -81,32 +129,71 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: _buildAppBar(),
       backgroundColor: AppColors.backgroundFor(isLight),
 
-      // Floating "EVALUATE" Button at the bottom
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-      floatingActionButton: Container(
-        margin: const EdgeInsets.only(bottom: 15),
-        child: ElevatedButton(
-          onPressed: () {
-            // Navigate to RIASEC Test
-            Navigator.pushNamed(context, '/riasec_test');
-          },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFFFACC15), // Yellow/Gold Color
-            foregroundColor: Colors.black, // Text Color
-            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(30),
-            ),
-            elevation: 5,
-            shadowColor: const Color(0xFFFACC15),
-          ),
+      // Circular "EVALUATE" FAB centered in the BottomAppBar notch
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      floatingActionButton: SizedBox(
+        width: 68,
+        height: 68,
+        child: FloatingActionButton(
+          heroTag: 'evaluate_fab',
+          onPressed: () => Navigator.pushNamed(context, '/riasec_test'),
+          backgroundColor: const Color(0xFFFACC15),
+          elevation: 6,
+          shape: const CircleBorder(),
           child: const Text(
-            "EVALUATE",
+            'EVAL\nUATE',
+            textAlign: TextAlign.center,
             style: TextStyle(
-              fontSize: 18,
+              fontSize: 9,
               fontWeight: FontWeight.bold,
-              letterSpacing: 1,
+              color: Colors.black,
+              letterSpacing: 0.8,
+              height: 1.4,
             ),
+          ),
+        ),
+      ),
+
+      // Bottom navigation bar with notch for the FAB
+      bottomNavigationBar: BottomAppBar(
+        shape: const CircularNotchedRectangle(),
+        notchMargin: 8,
+        color: isLight ? Colors.white : AppColors.surface,
+        child: SizedBox(
+          height: 60,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildNavItem(
+                Icons.home_outlined,
+                Icons.home,
+                'Home',
+                0,
+                isLight,
+              ),
+              _buildNavItem(
+                Icons.notifications_outlined,
+                Icons.notifications,
+                'Alerts',
+                1,
+                isLight,
+              ),
+              const SizedBox(width: 60), // gap for FAB
+              _buildNavItem(
+                Icons.chat_bubble_outline,
+                Icons.chat_bubble,
+                'Chats',
+                2,
+                isLight,
+              ),
+              _buildNavItem(
+                Icons.person_outline,
+                Icons.person,
+                'Profile',
+                3,
+                isLight,
+              ),
+            ],
           ),
         ),
       ),
@@ -143,6 +230,15 @@ class _HomeScreenState extends State<HomeScreen> {
                 TextField(
                   controller: _searchController,
                   style: TextStyle(color: AppColors.textPrimaryFor(isLight)),
+                  onSubmitted: (value) {
+                    if (value.isNotEmpty) {
+                      Navigator.pushNamed(
+                        context,
+                        '/ai_chatbot',
+                        arguments: {'initialQuery': value, 'autoSend': true},
+                      );
+                    }
+                  },
                   decoration: InputDecoration(
                     hintText: "What career is best for me?",
                     hintStyle: TextStyle(
@@ -151,12 +247,15 @@ class _HomeScreenState extends State<HomeScreen> {
                     suffixIcon: IconButton(
                       icon: const Icon(Icons.search, color: AppColors.primary),
                       onPressed: () {
-                        // Navigate to AI Chatbot with search query
+                        // Auto-send search query to AI chatbot
                         if (_searchController.text.isNotEmpty) {
                           Navigator.pushNamed(
                             context,
                             '/ai_chatbot',
-                            arguments: {'initialQuery': _searchController.text},
+                            arguments: {
+                              'initialQuery': _searchController.text,
+                              'autoSend': true,
+                            },
                           );
                         }
                       },
@@ -192,10 +291,12 @@ class _HomeScreenState extends State<HomeScreen> {
                     padding: const EdgeInsets.only(bottom: 12),
                     child: InkWell(
                       onTap: () {
-                        // This updates the search bar when text is clicked
-                        setState(() {
-                          _searchController.text = text;
-                        });
+                        // Auto-send suggestion directly to AI chat
+                        Navigator.pushNamed(
+                          context,
+                          '/ai_chatbot',
+                          arguments: {'initialQuery': text, 'autoSend': true},
+                        );
                       },
                       child: Text(
                         text,
@@ -268,48 +369,22 @@ class _HomeScreenState extends State<HomeScreen> {
       toolbarHeight: 60,
       leading: Padding(
         padding: const EdgeInsets.only(left: 8, top: 10),
-        child: PopupMenuButton<String>(
-          icon: Icon(Icons.person, color: AppColors.textPrimaryFor(isLight)),
-          onSelected: (value) {
-            if (value == 'profile') {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Profile - Coming Soon')),
-              );
-            } else if (value == 'settings') {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Settings - Coming Soon')),
-              );
-            } else if (value == 'logout') {
-              _logout();
-            }
-          },
-          itemBuilder: (BuildContext context) => [
-            PopupMenuItem<String>(
-              value: 'profile',
-              child: Text(
-                'Profile',
-                style: TextStyle(color: AppColors.textPrimaryFor(isLight)),
+        child: Container(
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.red.withOpacity(0.55),
+                blurRadius: 16,
+                spreadRadius: 1,
               ),
-            ),
-            PopupMenuItem<String>(
-              value: 'settings',
-              child: Text(
-                'Settings',
-                style: TextStyle(color: AppColors.textPrimaryFor(isLight)),
-              ),
-            ),
-            PopupMenuItem<String>(
-              value: 'logout',
-              child: Text(
-                'Logout',
-                style: TextStyle(
-                  color: Colors.red,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ],
-          color: AppColors.surfaceFor(isLight),
+            ],
+          ),
+          child: IconButton(
+            icon: const Icon(Icons.logout_rounded, color: Colors.red),
+            onPressed: _logout,
+            tooltip: 'Logout',
+          ),
         ),
       ),
       title: Padding(
@@ -353,11 +428,53 @@ class _HomeScreenState extends State<HomeScreen> {
     return BoxDecoration(gradient: RadialGradient(radius: 1, colors: colors));
   }
 
+  Widget _buildNavItem(
+    IconData outlinedIcon,
+    IconData filledIcon,
+    String label,
+    int index,
+    bool isLight,
+  ) {
+    final isSelected = _selectedNavIndex == index;
+    return InkWell(
+      onTap: () {
+        setState(() => _selectedNavIndex = index);
+        if (index == 2) {
+          Navigator.pushNamed(context, '/ai_chatbot');
+        }
+      },
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            isSelected ? filledIcon : outlinedIcon,
+            color: isSelected
+                ? AppColors.primary
+                : AppColors.textSecondaryFor(isLight),
+            size: 24,
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 10,
+              color: isSelected
+                  ? AppColors.primary
+                  : AppColors.textSecondaryFor(isLight),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildProfessionCard(String title, int index) {
+    final isLight = Theme.of(context).brightness == Brightness.light;
     return Container(
       margin: const EdgeInsets.only(bottom: 1),
       decoration: BoxDecoration(
-        color: AppColors.primary,
+        color: isLight ? AppColors.light4 : AppColors.primary,
         borderRadius: BorderRadius.circular(50),
       ),
       child: Material(
@@ -365,11 +482,23 @@ class _HomeScreenState extends State<HomeScreen> {
         child: InkWell(
           borderRadius: BorderRadius.circular(10),
           onTap: () {
-            // Navigate to AI Chatbot with profession context
+            // Build background prompt with user context
+            final userInfo = [
+              if (_userName.isNotEmpty) 'Student: $_userName',
+              if (_userAddress.isNotEmpty) 'Address: $_userAddress',
+              if (_userAge.isNotEmpty) 'Age: $_userAge',
+              if (_userGradeLevel.isNotEmpty) 'Grade Level: $_userGradeLevel',
+            ].join(', ');
+            final prompt =
+                '${userInfo.isNotEmpty ? '$userInfo. ' : ''}'
+                'Limit your responses to keypoints, and bold important texts and'
+                'Limit only providing information about the profession "$title", answer the following query without going outside the scope: '
+                'I am Interested in $title, what are the schools in '
+                'Philippines that offer this course?';
             Navigator.pushNamed(
               context,
               '/ai_chatbot',
-              arguments: {'profession': title},
+              arguments: {'profession': title, 'backgroundPrompt': prompt},
             );
           },
           child: Padding(
