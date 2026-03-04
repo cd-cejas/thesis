@@ -71,7 +71,7 @@ class _RiasecTestScreenState extends State<RiasecTestScreen> {
     final isLight = Theme.of(context).brightness == Brightness.light;
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: isLight ? AppColors.light2 : Colors.transparent,
         elevation: 0,
         leading: IconButton(
           icon: Icon(
@@ -97,166 +97,166 @@ class _RiasecTestScreenState extends State<RiasecTestScreen> {
           ),
         ),
         child: SafeArea(
-          child: Column(
-            children: [
-              // Progress Bar
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 20,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          "Question ${_currentQuestionIndex + 1} of 50",
-                          style: const TextStyle(
-                            color: AppColors.primary,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                          ),
-                        ),
-                        Text(
-                          "${((_currentQuestionIndex / 50) * 100).toStringAsFixed(1)}%",
-                          style: TextStyle(
-                            color: AppColors.textSecondaryFor(isLight),
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(10),
-                      child: LinearProgressIndicator(
-                        value: _currentQuestionIndex / 50,
-                        minHeight: 8,
-                        backgroundColor: isLight
-                            ? AppColors.light2.withOpacity(0.4)
-                            : Colors.white24,
-                        valueColor: const AlwaysStoppedAnimation<Color>(
-                          AppColors.primary,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              // Question
-              Expanded(
-                child: Padding(
+          child: SingleChildScrollView(
+            child: Column(
+              children: [
+                // Progress Bar
+                Padding(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 24,
-                    vertical: 40,
+                    vertical: 20,
                   ),
                   child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        _questions[_currentQuestionIndex],
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: AppColors.textPrimaryFor(isLight),
-                          fontSize: 20,
-                          fontWeight: FontWeight.w600,
-                          height: 1.6,
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            "Question ${_currentQuestionIndex + 1} of 50",
+                            style: const TextStyle(
+                              color: AppColors.primary,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
+                          ),
+                          Text(
+                            "${((_currentQuestionIndex / 50) * 100).toStringAsFixed(1)}%",
+                            style: TextStyle(
+                              color: AppColors.textSecondaryFor(isLight),
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(10),
+                        child: LinearProgressIndicator(
+                          value: _currentQuestionIndex / 50,
+                          minHeight: 8,
+                          backgroundColor: isLight
+                              ? AppColors.light2.withOpacity(0.4)
+                              : Colors.white24,
+                          valueColor: const AlwaysStoppedAnimation<Color>(
+                            AppColors.primary,
+                          ),
                         ),
                       ),
                     ],
                   ),
                 ),
-              ),
 
-              // Answer Buttons
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 40,
+                // Question
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 20,
+                  ),
+                  child: Text(
+                    _questions[_currentQuestionIndex],
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: AppColors.textPrimaryFor(isLight),
+                      fontSize: 20,
+                      fontWeight: FontWeight.w600,
+                      height: 1.6,
+                    ),
+                  ),
                 ),
-                child: Column(
-                  children: [
-                    _buildAnswerButton("Strongly Disagree", 1),
-                    const SizedBox(height: 12),
-                    _buildAnswerButton("Disagree", 2),
-                    const SizedBox(height: 12),
-                    _buildAnswerButton("Neutral", 3),
-                    const SizedBox(height: 12),
-                    _buildAnswerButton("Agree", 4),
-                    const SizedBox(height: 12),
-                    _buildAnswerButton("Strongly Agree", 5),
-                  ],
-                ),
-              ),
 
-              // Navigation Buttons
-              Padding(
-                padding: const EdgeInsets.only(left: 24, right: 24, bottom: 40),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: _currentQuestionIndex > 0
-                            ? () {
-                                setState(() {
-                                  _currentQuestionIndex--;
-                                });
-                              }
-                            : null,
-                        icon: const Icon(Icons.chevron_left),
-                        label: const Text("Previous"),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          foregroundColor: Colors.black,
-                          disabledBackgroundColor: isLight
-                              ? AppColors.light2
-                              : Colors.grey[600],
+                // Answer Buttons
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 12,
+                  ),
+                  child: Column(
+                    children: [
+                      _buildAnswerButton("Strongly Disagree", 1),
+                      const SizedBox(height: 12),
+                      _buildAnswerButton("Disagree", 2),
+                      const SizedBox(height: 12),
+                      _buildAnswerButton("Neutral", 3),
+                      const SizedBox(height: 12),
+                      _buildAnswerButton("Agree", 4),
+                      const SizedBox(height: 12),
+                      _buildAnswerButton("Strongly Agree", 5),
+                    ],
+                  ),
+                ),
+
+                // Navigation Buttons
+                Padding(
+                  padding: const EdgeInsets.only(
+                    left: 24,
+                    right: 24,
+                    bottom: 24,
+                    top: 8,
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: _currentQuestionIndex > 0
+                              ? () {
+                                  setState(() {
+                                    _currentQuestionIndex--;
+                                  });
+                                }
+                              : null,
+                          icon: const Icon(Icons.chevron_left),
+                          label: const Text("Previous"),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            foregroundColor: Colors.black,
+                            disabledBackgroundColor: isLight
+                                ? AppColors.light2
+                                : Colors.grey[600],
+                          ),
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: _currentQuestionIndex >= _answers.length
-                            ? null
-                            : (_currentQuestionIndex < 49
-                                  ? () {
-                                      setState(() {
-                                        _currentQuestionIndex++;
-                                      });
-                                    }
-                                  : () {
-                                      //Navigate to results
-                                      Navigator.pushNamed(
-                                        context,
-                                        '/riasec_results',
-                                        arguments: _answers,
-                                      );
-                                    }),
-                        label: Text(
-                          _currentQuestionIndex < 49 ? "Next" : "Submit",
-                        ),
-                        icon: Icon(
-                          _currentQuestionIndex < 49
-                              ? Icons.chevron_right
-                              : Icons.check,
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          foregroundColor: Colors.black,
-                          disabledBackgroundColor: isLight
-                              ? AppColors.light2
-                              : Colors.grey[600],
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: _currentQuestionIndex >= _answers.length
+                              ? null
+                              : (_currentQuestionIndex < 49
+                                    ? () {
+                                        setState(() {
+                                          _currentQuestionIndex++;
+                                        });
+                                      }
+                                    : () {
+                                        //Navigate to results
+                                        Navigator.pushNamed(
+                                          context,
+                                          '/riasec_results',
+                                          arguments: _answers,
+                                        );
+                                      }),
+                          label: Text(
+                            _currentQuestionIndex < 49 ? "Next" : "Submit",
+                          ),
+                          icon: Icon(
+                            _currentQuestionIndex < 49
+                                ? Icons.chevron_right
+                                : Icons.check,
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            foregroundColor: Colors.black,
+                            disabledBackgroundColor: isLight
+                                ? AppColors.light2
+                                : Colors.grey[600],
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

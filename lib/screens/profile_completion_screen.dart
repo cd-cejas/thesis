@@ -38,7 +38,7 @@ class _ProfileCompletionScreenState extends State<ProfileCompletionScreen>
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final OtpService _otpService = OtpService();
 
-  /// Deletes the unverified account and navigates back to signup.
+  /// Deletes the unverified account and navigates back to login.
   Future<void> _deleteAccountAndGoBack() async {
     if (_isCancelling) return;
     setState(() => _isCancelling = true);
@@ -46,7 +46,7 @@ class _ProfileCompletionScreenState extends State<ProfileCompletionScreen>
     await _otpService.deleteUnverifiedAccount();
 
     if (!mounted) return;
-    Navigator.pushNamedAndRemoveUntil(context, '/signup', (route) => false);
+    Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
   }
 
   @override
@@ -195,7 +195,7 @@ class _ProfileCompletionScreenState extends State<ProfileCompletionScreen>
     //appbar
     final isLight = Theme.of(context).brightness == Brightness.light;
     return AppBar(
-      backgroundColor: Colors.transparent,
+      backgroundColor: isLight ? AppColors.light2 : Colors.transparent,
       elevation: 0,
       centerTitle: true,
       toolbarHeight: 60,

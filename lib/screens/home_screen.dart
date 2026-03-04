@@ -64,6 +64,131 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _logout() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      barrierColor: Colors.black.withOpacity(0.6),
+      builder: (ctx) {
+        final isLight = Theme.of(ctx).brightness == Brightness.light;
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: isLight ? Colors.white : AppColors.surface,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: isLight
+                    ? AppColors.light2.withOpacity(0.6)
+                    : Colors.white.withOpacity(0.08),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(isLight ? 0.12 : 0.5),
+                  blurRadius: 24,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Icon badge
+                Container(
+                  width: 64,
+                  height: 64,
+                  decoration: BoxDecoration(
+                    color: Colors.red.withOpacity(0.12),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.logout_rounded,
+                    color: Colors.red,
+                    size: 30,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                // Title
+                Text(
+                  'Log Out',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimaryFor(isLight),
+                    letterSpacing: 0.2,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                // Message
+                Text(
+                  'Are you sure you want to log out?',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 13.5,
+                    color: AppColors.textSecondaryFor(isLight),
+                    height: 1.4,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                // Action buttons
+                Row(
+                  children: [
+                    // Cancel
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.pop(ctx, false),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 13),
+                          side: BorderSide(
+                            color: isLight
+                                ? AppColors.light2
+                                : Colors.white.withOpacity(0.15),
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: Text(
+                          'Cancel',
+                          style: TextStyle(
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textPrimaryFor(isLight),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    // Log Out
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () => Navigator.pop(ctx, true),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 13),
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: const Text(
+                          'Log Out',
+                          style: TextStyle(
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+    if (confirmed != true) return;
     await _auth.signOut();
     if (mounted) {
       Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
@@ -131,25 +256,29 @@ class _HomeScreenState extends State<HomeScreen> {
 
       // Circular "EVALUATE" FAB centered in the BottomAppBar notch
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      floatingActionButton: SizedBox(
+      floatingActionButton: Container(
         width: 68,
         height: 68,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFFFACC15).withOpacity(0.6),
+              blurRadius: 18,
+              spreadRadius: 2,
+            ),
+          ],
+        ),
         child: FloatingActionButton(
           heroTag: 'evaluate_fab',
           onPressed: () => Navigator.pushNamed(context, '/riasec_test'),
           backgroundColor: const Color(0xFFFACC15),
-          elevation: 6,
+          elevation: 0,
           shape: const CircleBorder(),
-          child: const Text(
-            'EVAL\nUATE',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 9,
-              fontWeight: FontWeight.bold,
-              color: Colors.black,
-              letterSpacing: 0.8,
-              height: 1.4,
-            ),
+          child: const Icon(
+            Icons.assignment_outlined,
+            color: Colors.black,
+            size: 28,
           ),
         ),
       ),
@@ -158,43 +287,42 @@ class _HomeScreenState extends State<HomeScreen> {
       bottomNavigationBar: BottomAppBar(
         shape: const CircularNotchedRectangle(),
         notchMargin: 8,
-        color: isLight ? Colors.white : AppColors.surface,
-        child: SizedBox(
-          height: 60,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _buildNavItem(
-                Icons.home_outlined,
-                Icons.home,
-                'Home',
-                0,
-                isLight,
-              ),
-              _buildNavItem(
-                Icons.notifications_outlined,
-                Icons.notifications,
-                'Alerts',
-                1,
-                isLight,
-              ),
-              const SizedBox(width: 60), // gap for FAB
-              _buildNavItem(
-                Icons.chat_bubble_outline,
-                Icons.chat_bubble,
-                'Chats',
-                2,
-                isLight,
-              ),
-              _buildNavItem(
-                Icons.person_outline,
-                Icons.person,
-                'Profile',
-                3,
-                isLight,
-              ),
-            ],
-          ),
+        height: 60,
+        padding: EdgeInsets.zero,
+        color: isLight ? AppColors.light2 : AppColors.surface,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            _buildNavItem(
+              Icons.person_outline,
+              Icons.person,
+              'Profile',
+              0,
+              isLight,
+            ),
+            _buildNavItem(
+              Icons.chat_bubble_outline,
+              Icons.chat_bubble,
+              'Chats',
+              1,
+              isLight,
+            ),
+            const SizedBox(width: 60), // gap for FAB
+            _buildNavItem(
+              Icons.notifications_outlined,
+              Icons.notifications,
+              'Alerts',
+              2,
+              isLight,
+            ),
+            _buildNavItem(
+              Icons.settings_outlined,
+              Icons.settings,
+              'Settings',
+              3,
+              isLight,
+            ),
+          ],
         ),
       ),
 
@@ -331,7 +459,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   shrinkWrap: true,
                   itemCount: _professions.length,
                   separatorBuilder: (context, index) =>
-                      const SizedBox(height: 15),
+                      const SizedBox(height: 12),
                   itemBuilder: (context, index) {
                     return _buildProfessionCard(_professions[index], index);
                   },
@@ -363,28 +491,16 @@ class _HomeScreenState extends State<HomeScreen> {
   AppBar _buildAppBar() {
     final isLight = Theme.of(context).brightness == Brightness.light;
     return AppBar(
-      backgroundColor: Colors.transparent,
+      backgroundColor: isLight ? AppColors.light2 : Colors.transparent,
       elevation: 0,
       centerTitle: true,
       toolbarHeight: 60,
       leading: Padding(
         padding: const EdgeInsets.only(left: 8, top: 10),
-        child: Container(
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.red.withOpacity(0.55),
-                blurRadius: 16,
-                spreadRadius: 1,
-              ),
-            ],
-          ),
-          child: IconButton(
-            icon: const Icon(Icons.logout_rounded, color: Colors.red),
-            onPressed: _logout,
-            tooltip: 'Logout',
-          ),
+        child: IconButton(
+          icon: const Icon(Icons.logout_rounded, color: Colors.red),
+          onPressed: _logout,
+          tooltip: 'Logout',
         ),
       ),
       title: Padding(
@@ -452,9 +568,8 @@ class _HomeScreenState extends State<HomeScreen> {
             color: isSelected
                 ? AppColors.primary
                 : AppColors.textSecondaryFor(isLight),
-            size: 24,
+            size: 20,
           ),
-          const SizedBox(height: 2),
           Text(
             label,
             style: TextStyle(
@@ -474,7 +589,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return Container(
       margin: const EdgeInsets.only(bottom: 1),
       decoration: BoxDecoration(
-        color: isLight ? AppColors.light4 : AppColors.primary,
+        color: isLight ? AppColors.light3 : AppColors.primary,
         borderRadius: BorderRadius.circular(50),
       ),
       child: Material(
@@ -491,10 +606,10 @@ class _HomeScreenState extends State<HomeScreen> {
             ].join(', ');
             final prompt =
                 '${userInfo.isNotEmpty ? '$userInfo. ' : ''}'
-                'Limit your responses to keypoints, and bold important texts and'
-                'Limit only providing information about the profession "$title", answer the following query without going outside the scope: '
-                'I am Interested in $title, what are the schools in '
-                'Philippines that offer this course?';
+                'Keep responses to concise key points, bold important phrases, '
+                'and focus only on the profession "$title". Answer the query '
+                'without leaving that scope: I am interested in $title; which '
+                'schools in the Philippines offer this course?';
             Navigator.pushNamed(
               context,
               '/ai_chatbot',
@@ -502,7 +617,7 @@ class _HomeScreenState extends State<HomeScreen> {
             );
           },
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
             child: Row(
               children: [
                 Container(
@@ -528,7 +643,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                 ),
-                const SizedBox(width: 20),
+                const SizedBox(width: 16),
                 Expanded(
                   child: Text(
                     title,

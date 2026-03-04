@@ -192,7 +192,7 @@ class _LoginScreenState extends State<LoginScreen>
   AppBar _buildAppBar() {
     final isLight = Theme.of(context).brightness == Brightness.light;
     return AppBar(
-      backgroundColor: Colors.transparent,
+      backgroundColor: isLight ? AppColors.light2 : Colors.transparent,
       elevation: 0,
       centerTitle: true,
       toolbarHeight: 60,
@@ -437,9 +437,8 @@ class _LoginScreenState extends State<LoginScreen>
     });
 
     try {
-      UserCredential credential;
       if (kIsWeb) {
-        credential = await _auth.signInWithPopup(GoogleAuthProvider());
+        await _auth.signInWithPopup(GoogleAuthProvider());
       } else {
         final googleUser = await _googleSignIn.signIn();
         if (googleUser == null) {
@@ -455,7 +454,7 @@ class _LoginScreenState extends State<LoginScreen>
           idToken: googleAuth.idToken,
         );
 
-        credential = await _auth.signInWithCredential(oauthCredential);
+        await _auth.signInWithCredential(oauthCredential);
       }
 
       await _checkProfileAndNavigate();

@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import '../otp_service.dart';
@@ -31,6 +32,7 @@ class _SignupScreenState extends State<SignupScreen>
   final TextEditingController _confirmPasswordController =
       TextEditingController();
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final GoogleSignIn _googleSignIn = GoogleSignIn();
   final FacebookAuth _facebookAuth = FacebookAuth.instance;
 
@@ -69,6 +71,74 @@ class _SignupScreenState extends State<SignupScreen>
 
   final OtpService _otpService = OtpService();
 
+  Future<bool> _deleteIncompleteAccountIfOwnedByPassword({
+    required String email,
+    required String password,
+  }) async {
+    try {
+      final credential = await _auth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      final user = credential.user;
+      if (user == null) return false;
+
+      final hasProfile =
+          (await _firestore.collection('users').doc(user.uid).get()).exists;
+      if (hasProfile) {
+        await _auth.signOut();
+        return false;
+      }
+
+      await _firestore
+          .collection('email_otps')
+          .doc(user.uid)
+          .delete()
+          .catchError((_) {});
+
+      await user.delete();
+      return true;
+    } on FirebaseAuthException {
+      return false;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<void> _createAccountAndStartOtp({
+    required String email,
+    required String password,
+  }) async {
+    final userCredential = await _auth.createUserWithEmailAndPassword(
+      email: email,
+      password: password,
+    );
+
+    final uid = userCredential.user!.uid;
+
+    final otpError = await _otpService.sendOtp(uid: uid, email: email);
+
+    if (!mounted) return;
+    setState(() => _isLoading = false);
+
+    if (otpError != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(otpError, style: const TextStyle(fontSize: 12)),
+          backgroundColor: Colors.orange,
+          duration: const Duration(seconds: 6),
+        ),
+      );
+    }
+
+    Navigator.pushNamed(
+      context,
+      '/otp',
+      arguments: {'email': email, 'uid': uid},
+    );
+  }
+
   Future<void> _signup() async {
     if (_isLoading) return;
 
@@ -90,36 +160,36 @@ class _SignupScreenState extends State<SignupScreen>
     });
 
     try {
-      final userCredential = await _auth.createUserWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
-
-      final uid = userCredential.user!.uid;
-
-      // Send OTP — show warning snackbar if EmailJS isn't configured yet
-      final otpError = await _otpService.sendOtp(uid: uid, email: email);
-
-      if (!mounted) return;
-      setState(() => _isLoading = false);
-
-      if (otpError != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(otpError, style: const TextStyle(fontSize: 12)),
-            backgroundColor: Colors.orange,
-            duration: const Duration(seconds: 6),
-          ),
+      await _createAccountAndStartOtp(email: email, password: password);
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'email-already-in-use') {
+        final cleaned = await _deleteIncompleteAccountIfOwnedByPassword(
+          email: email,
+          password: password,
         );
+
+        if (cleaned) {
+          try {
+            await _createAccountAndStartOtp(email: email, password: password);
+            return;
+          } on FirebaseAuthException catch (retryError) {
+            if (!mounted) return;
+            setState(() {
+              _errorMessage = _getErrorMessage(retryError.code);
+              _isLoading = false;
+            });
+            return;
+          } catch (_) {
+            if (!mounted) return;
+            setState(() {
+              _errorMessage = 'An unexpected error occurred';
+              _isLoading = false;
+            });
+            return;
+          }
+        }
       }
 
-      // Navigate to OTP verification screen regardless
-      Navigator.pushNamed(
-        context,
-        '/otp',
-        arguments: {'email': email, 'uid': uid},
-      );
-    } on FirebaseAuthException catch (e) {
       if (!mounted) return;
       setState(() {
         _errorMessage = _getErrorMessage(e.code);
@@ -303,7 +373,7 @@ class _SignupScreenState extends State<SignupScreen>
   AppBar _buildAppBar() {
     final isLight = Theme.of(context).brightness == Brightness.light;
     return AppBar(
-      backgroundColor: Colors.transparent,
+      backgroundColor: isLight ? AppColors.light2 : Colors.transparent,
       elevation: 0,
       centerTitle: true,
       toolbarHeight: 60,

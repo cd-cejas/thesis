@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import '../otp_service.dart';
 import '../theme/app_colors.dart';
 
@@ -240,7 +239,7 @@ class _OtpScreenState extends State<OtpScreen>
 
   AppBar _buildAppBar(bool isLight) {
     return AppBar(
-      backgroundColor: Colors.transparent,
+      backgroundColor: isLight ? AppColors.light2 : Colors.transparent,
       elevation: 0,
       centerTitle: true,
       toolbarHeight: 60,

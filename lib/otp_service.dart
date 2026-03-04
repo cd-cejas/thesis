@@ -18,9 +18,30 @@ import 'package:http/http.dart' as http;
 ///       • Under "Allowed Origins", add:  http://localhost
 ///       • Save. The app sends origin: http://localhost in every request.
 /// ────────────────────────────────────────────────────────────────
-const String _kEmailJsServiceId = 'service_wwzytvm';
-const String _kEmailJsTemplateId = 'template_p32mmst';
-const String _kEmailJsPublicKey = 'nqheLTq4g1S1mqlEL';
+// Built-in defaults so you don't need to pass dart-define every run.
+// Replace these with your own EmailJS values. They can still be overridden
+// by supplying --dart-define flags if needed.
+const String _fallbackEmailJsServiceId = 'service_wwzytvm';
+const String _fallbackEmailJsTemplateId = 'template_p32mmst';
+const String _fallbackEmailJsPublicKey = 'nqheLTq4g1S1mqlEL';
+
+const String _kEmailJsServiceId = String.fromEnvironment(
+  'EMAILJS_SERVICE_ID',
+  defaultValue: _fallbackEmailJsServiceId,
+);
+const String _kEmailJsTemplateId = String.fromEnvironment(
+  'EMAILJS_TEMPLATE_ID',
+  defaultValue: _fallbackEmailJsTemplateId,
+);
+const String _kEmailJsPublicKey = String.fromEnvironment(
+  'EMAILJS_PUBLIC_KEY',
+  defaultValue: _fallbackEmailJsPublicKey,
+);
+
+bool get _isEmailJsConfigured =>
+    _kEmailJsServiceId.isNotEmpty &&
+    _kEmailJsTemplateId.isNotEmpty &&
+    _kEmailJsPublicKey.isNotEmpty;
 
 class OtpService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -156,11 +177,9 @@ class OtpService {
     required String email,
     required String otp,
   }) async {
-    // If the developer hasn't configured EmailJS yet, skip sending
-    // but return a soft warning (not a hard failure).
-    if (_kEmailJsServiceId == 'YOUR_SERVICE_ID') {
-      return 'EmailJS credentials not configured. '
-          'Open lib/otp_service.dart and set your service/template/public keys.';
+    if (!_isEmailJsConfigured) {
+      return 'EmailJS credentials missing. Build/run with --dart-define EMAILJS_SERVICE_ID, '
+          'EMAILJS_TEMPLATE_ID, and EMAILJS_PUBLIC_KEY.';
     }
 
     try {
@@ -177,12 +196,21 @@ class OtpService {
           'service_id': _kEmailJsServiceId,
           'template_id': _kEmailJsTemplateId,
           'user_id': _kEmailJsPublicKey,
-          'accessToken': _kEmailJsPublicKey,
-          'template_params': {'to_email': email, 'otp_code': otp},
+          'template_params': {
+            'to_email': email,
+            'email': email,
+            'user_email': email,
+            'otp_code': otp,
+            'passcode': otp,
+          },
         }),
       );
 
       if (response.statusCode == 200) return null;
+      if (response.statusCode == 422) {
+        return 'EmailJS rejected the request (422). Check your EmailJS template:'
+            ' recipient must use {{to_email}} and body must use {{otp_code}}.';
+      }
       return 'Email send failed (${response.statusCode}): ${response.body}';
     } catch (e) {
       return 'Email send error: $e';

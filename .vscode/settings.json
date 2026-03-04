@@ -1,3 +1,8 @@
 {
-    "java.configuration.updateBuildConfiguration": "interactive"
+    "java.configuration.updateBuildConfiguration": "interactive",
+    "toolArgs": [
+        "--dart-define=EMAILJS_SERVICE_ID=your_id",
+        "--dart-define=EMAILJS_TEMPLATE_ID=your_template",
+        "--dart-define=EMAILJS_PUBLIC_KEY=your_key"
+    ]
 }

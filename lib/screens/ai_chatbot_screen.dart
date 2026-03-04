@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../deepseek_service.dart';
 import '../theme/app_colors.dart';
+import '../theme/theme_provider.dart';
 
 class AiChatbotScreen extends StatefulWidget {
   final String? profession;
@@ -173,6 +175,7 @@ class _AiChatbotScreenState extends State<AiChatbotScreen> {
   void dispose() {
     _messageController.dispose();
     _scrollController.dispose();
+    _deepSeekService.dispose();
     super.dispose();
   }
 
@@ -181,7 +184,7 @@ class _AiChatbotScreenState extends State<AiChatbotScreen> {
     final isLight = Theme.of(context).brightness == Brightness.light;
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: isLight ? AppColors.light2 : Colors.transparent,
         elevation: 0,
         leading: IconButton(
           icon: Icon(
@@ -190,14 +193,34 @@ class _AiChatbotScreenState extends State<AiChatbotScreen> {
           ),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text(
-          "AI Career Guidance",
-          style: TextStyle(
-            color: AppColors.textPrimaryFor(isLight),
-            fontWeight: FontWeight.bold,
+        title: Padding(
+          padding: const EdgeInsets.only(top: 4),
+          child: Image.asset(
+            isLight ? 'logos/name1.png' : 'logos/name.png',
+            height: 200,
+            width: 200,
+            fit: BoxFit.contain,
           ),
         ),
         centerTitle: true,
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: IconButton(
+              icon: Icon(
+                isLight ? Icons.dark_mode : Icons.light_mode,
+                color: AppColors.textPrimaryFor(isLight),
+              ),
+              onPressed: () {
+                Provider.of<ThemeProvider>(
+                  context,
+                  listen: false,
+                ).toggleTheme();
+              },
+              tooltip: 'Toggle Theme',
+            ),
+          ),
+        ],
       ),
       backgroundColor: AppColors.backgroundFor(isLight),
       body: Container(
@@ -354,7 +377,7 @@ class _AiChatbotScreenState extends State<AiChatbotScreen> {
         ),
         decoration: BoxDecoration(
           color: message.isUser
-              ? AppColors.primary
+              ? (isLight ? AppColors.light3 : AppColors.primary)
               : AppColors.cardOverlay(isLight),
           borderRadius: BorderRadius.circular(16),
           border: message.isUser
@@ -365,7 +388,7 @@ class _AiChatbotScreenState extends State<AiChatbotScreen> {
           message.text,
           style: TextStyle(
             color: message.isUser
-                ? Colors.black
+                ? Colors.white
                 : AppColors.textPrimaryFor(isLight),
             fontSize: 14,
             height: 1.5,

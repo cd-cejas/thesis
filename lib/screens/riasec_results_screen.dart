@@ -54,7 +54,7 @@ class _RiasecResultsScreenState extends State<RiasecResultsScreen> {
     final isLight = Theme.of(context).brightness == Brightness.light;
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: isLight ? AppColors.light2 : Colors.transparent,
         elevation: 0,
         leading: IconButton(
           icon: Icon(
