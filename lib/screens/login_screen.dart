@@ -322,7 +322,7 @@ class _LoginScreenState extends State<LoginScreen>
     return Column(
       children: [
         Text(
-          "Welcome Back!",
+          "Welcome, User!",
           style: TextStyle(
             fontSize: 32,
             fontWeight: FontWeight.bold,

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
 import '../deepseek_service.dart';
 import '../theme/app_colors.dart';
@@ -29,6 +31,11 @@ class _AiChatbotScreenState extends State<AiChatbotScreen> {
   final DeepSeekService _deepSeekService = DeepSeekService();
   final List<Map<String, String>> _apiMessageHistory = [];
   bool _isLoading = false;
+
+  // Chat history persistence
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  String? _chatSessionId;
 
   @override
   void initState() {
@@ -87,6 +94,7 @@ class _AiChatbotScreenState extends State<AiChatbotScreen> {
     } else {
       _apiMessageHistory.add({'role': 'assistant', 'content': response});
       _addBotMessage(response);
+      _saveChatToHistory();
     }
   }
 
@@ -103,6 +111,7 @@ class _AiChatbotScreenState extends State<AiChatbotScreen> {
     } else {
       _apiMessageHistory.add({'role': 'assistant', 'content': response});
       _addBotMessage(response);
+      _saveChatToHistory();
     }
   }
 
@@ -168,6 +177,58 @@ class _AiChatbotScreenState extends State<AiChatbotScreen> {
       // Add successful assistant response to API history
       _apiMessageHistory.add({'role': 'assistant', 'content': response});
       _addBotMessage(response);
+      _saveChatToHistory();
+    }
+  }
+
+  /// Persists the current conversation to Firestore under the user's chat_history.
+  Future<void> _saveChatToHistory() async {
+    final user = _auth.currentUser;
+    if (user == null) return;
+
+    // Derive a title from the first user message
+    final firstUserMsg = _messages.firstWhere(
+      (m) => m.isUser,
+      orElse: () =>
+          ChatMessage(text: 'Chat', isUser: true, timestamp: DateTime.now()),
+    );
+    final title = firstUserMsg.text.length > 60
+        ? '${firstUserMsg.text.substring(0, 60)}...'
+        : firstUserMsg.text;
+
+    final lastMsg = _messages.last;
+
+    final messagesData = _messages
+        .map(
+          (m) => {
+            'text': m.text,
+            'isUser': m.isUser,
+            'timestamp': m.timestamp.toIso8601String(),
+          },
+        )
+        .toList();
+
+    final chatData = {
+      'title': title,
+      'lastMessage': lastMsg.text.length > 100
+          ? '${lastMsg.text.substring(0, 100)}...'
+          : lastMsg.text,
+      'messageCount': _messages.length,
+      'messages': messagesData,
+      'updatedAt': FieldValue.serverTimestamp(),
+    };
+
+    final ref = _firestore
+        .collection('users')
+        .doc(user.uid)
+        .collection('chat_history');
+
+    if (_chatSessionId != null) {
+      await ref.doc(_chatSessionId).update(chatData);
+    } else {
+      chatData['createdAt'] = FieldValue.serverTimestamp();
+      final doc = await ref.add(chatData);
+      _chatSessionId = doc.id;
     }
   }
 

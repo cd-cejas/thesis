@@ -13,6 +13,10 @@ import 'screens/home_screen.dart';
 import 'screens/riasec_test_screen.dart';
 import 'screens/ai_chatbot_screen.dart';
 import 'screens/riasec_results_screen.dart';
+import 'screens/profile_screen.dart';
+import 'screens/chat_history_screen.dart';
+import 'screens/notifications_screen.dart';
+import 'screens/settings_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -50,6 +54,10 @@ class MyApp extends StatelessWidget {
             '/forgot_password': (context) => const ForgotPasswordScreen(),
             '/profile_completion': (context) => const ProfileCompletionScreen(),
             '/home': (context) => const HomeScreen(),
+            '/profile': (context) => const ProfileScreen(),
+            '/chat_history': (context) => const ChatHistoryScreen(),
+            '/notifications': (context) => const NotificationsScreen(),
+            '/settings': (context) => const SettingsScreen(),
             '/riasec_test': (context) => const RiasecTestScreen(),
             '/ai_chatbot': (context) {
               final args = ModalRoute.of(context)?.settings.arguments as Map?;
