@@ -9,6 +9,7 @@ import 'package:provider/provider.dart';
 import '../theme/app_colors.dart';
 import '../theme/theme_provider.dart';
 import '../widgets/social_buttons.dart';
+import 'package:unicons/unicons.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -209,7 +210,7 @@ class _LoginScreenState extends State<LoginScreen>
         padding: const EdgeInsets.only(top: 10),
         child: IconButton(
           icon: Icon(
-            Icons.arrow_back,
+            UniconsLine.arrow_left,
             color: Theme.of(context).brightness == Brightness.dark
                 ? Colors.white
                 : Colors.black87,
@@ -224,7 +225,7 @@ class _LoginScreenState extends State<LoginScreen>
             icon: Consumer<ThemeProvider>(
               builder: (context, themeProvider, _) {
                 return Icon(
-                  themeProvider.isDarkMode ? Icons.light_mode : Icons.dark_mode,
+                  themeProvider.isDarkMode ? UniconsLine.sun : UniconsLine.moon,
                   color: themeProvider.isDarkMode
                       ? Colors.white
                       : Colors.black87,
@@ -347,7 +348,7 @@ class _LoginScreenState extends State<LoginScreen>
       controller: _emailController,
       enabled: !_isLoading,
       decoration: const InputDecoration(
-        prefixIcon: Icon(Icons.email_outlined),
+        prefixIcon: const Icon(UniconsLine.envelope),
         hintText: 'Email Address',
       ),
     );
@@ -359,7 +360,7 @@ class _LoginScreenState extends State<LoginScreen>
       enabled: !_isLoading,
       obscureText: _isObscure,
       decoration: InputDecoration(
-        prefixIcon: const Icon(Icons.lock_outline),
+        prefixIcon: const Icon(UniconsLine.lock),
         hintText: 'Password',
         suffixIcon: _buildVisibilityToggle(),
       ),
@@ -370,7 +371,7 @@ class _LoginScreenState extends State<LoginScreen>
     final isLight = Theme.of(context).brightness == Brightness.light;
     return IconButton(
       icon: Icon(
-        _isObscure ? Icons.visibility_off : Icons.visibility,
+        _isObscure ? UniconsLine.eye_slash : UniconsLine.eye,
         color: AppColors.iconColor(isLight),
       ),
       onPressed: () => setState(() => _isObscure = !_isObscure),

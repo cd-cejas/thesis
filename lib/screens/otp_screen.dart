@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../otp_service.dart';
 import '../theme/app_colors.dart';
+import 'package:unicons/unicons.dart';
 
 class OtpScreen extends StatefulWidget {
   final String email;
@@ -256,7 +257,7 @@ class _OtpScreenState extends State<OtpScreen>
         padding: const EdgeInsets.only(top: 10),
         child: IconButton(
           icon: Icon(
-            Icons.arrow_back,
+            UniconsLine.arrow_left,
             color: isLight ? Colors.black87 : Colors.white,
           ),
           onPressed: () => _deleteAccountAndGoBack(),

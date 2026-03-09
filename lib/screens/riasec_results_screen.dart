@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
+import 'package:unicons/unicons.dart';
+import 'package:lottie/lottie.dart';
 
 class RiasecResultsScreen extends StatefulWidget {
   final List<int>? answers;
@@ -58,7 +60,7 @@ class _RiasecResultsScreenState extends State<RiasecResultsScreen> {
         elevation: 0,
         leading: IconButton(
           icon: Icon(
-            Icons.arrow_back,
+            UniconsLine.arrow_left,
             color: AppColors.textPrimaryFor(isLight),
           ),
           onPressed: () => Navigator.pop(context),
@@ -103,10 +105,12 @@ class _RiasecResultsScreenState extends State<RiasecResultsScreen> {
                   ),
                   child: Column(
                     children: [
-                      const Icon(
-                        Icons.check_circle,
-                        color: AppColors.primary,
-                        size: 48,
+                      Lottie.asset(
+                        'assets/lottie/celebrate.json',
+                        width: 80,
+                        height: 80,
+                        fit: BoxFit.contain,
+                        repeat: false,
                       ),
                       const SizedBox(height: 12),
                       Text(
@@ -158,7 +162,7 @@ class _RiasecResultsScreenState extends State<RiasecResultsScreen> {
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: const Icon(
-                              Icons.star,
+                              UniconsSolid.star,
                               color: Colors.black,
                               size: 24,
                             ),
@@ -212,7 +216,7 @@ class _RiasecResultsScreenState extends State<RiasecResultsScreen> {
                             vertical: 12,
                           ),
                         ),
-                        icon: const Icon(Icons.info_outline),
+                        icon: const Icon(UniconsLine.info_circle),
                         label: const Text("Learn More"),
                       ),
                     ],
@@ -228,7 +232,7 @@ class _RiasecResultsScreenState extends State<RiasecResultsScreen> {
                     Row(
                       children: [
                         const Icon(
-                          Icons.school,
+                          UniconsLine.graduation_cap,
                           color: AppColors.primary,
                           size: 24,
                         ),
@@ -284,7 +288,7 @@ class _RiasecResultsScreenState extends State<RiasecResultsScreen> {
                             borderRadius: BorderRadius.circular(12),
                           ),
                         ),
-                        icon: const Icon(Icons.chat),
+                        icon: const Icon(UniconsLine.comment_alt),
                         label: const Text("Chat with AI About Results"),
                       ),
                     ),
@@ -310,7 +314,7 @@ class _RiasecResultsScreenState extends State<RiasecResultsScreen> {
                             borderRadius: BorderRadius.circular(12),
                           ),
                         ),
-                        icon: const Icon(Icons.home),
+                        icon: const Icon(UniconsLine.home_alt),
                         label: const Text("Back to Home"),
                       ),
                     ),
@@ -385,7 +389,7 @@ class _RiasecResultsScreenState extends State<RiasecResultsScreen> {
             ),
           ),
           Icon(
-            Icons.check_circle,
+            UniconsLine.check_circle,
             color: AppColors.primary.withOpacity(0.7),
             size: 24,
           ),

@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:provider/provider.dart';
 import '../theme/app_colors.dart';
+import '../theme/theme_provider.dart';
+import '../widgets/shared_bottom_nav.dart';
+import 'package:unicons/unicons.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -10,15 +14,18 @@ class SettingsScreen extends StatelessWidget {
     final isLight = Theme.of(context).brightness == Brightness.light;
     return Scaffold(
       backgroundColor: AppColors.backgroundFor(isLight),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      floatingActionButton: const SharedEvaluateFab(),
       appBar: AppBar(
         backgroundColor: isLight ? AppColors.light2 : Colors.transparent,
         elevation: 0,
         leading: IconButton(
           icon: Icon(
-            Icons.arrow_back,
+            UniconsLine.home_alt,
             color: AppColors.textPrimaryFor(isLight),
           ),
-          onPressed: () => Navigator.pop(context),
+          tooltip: 'Home',
+          onPressed: () => Navigator.pushReplacementNamed(context, '/home'),
         ),
         title: Text(
           'Settings',
@@ -29,42 +36,67 @@ class SettingsScreen extends StatelessWidget {
           ),
         ),
         centerTitle: true,
-      ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: RadialGradient(
-            radius: 1,
-            colors: AppColors.gradientColors(isLight),
+        actions: [
+          Consumer<ThemeProvider>(
+            builder: (context, themeProvider, _) => IconButton(
+              icon: Icon(
+                themeProvider.isDarkMode ? UniconsLine.sun : UniconsLine.moon,
+                color: AppColors.textPrimaryFor(isLight),
+              ),
+              tooltip: themeProvider.isDarkMode
+                  ? 'Switch to light mode'
+                  : 'Switch to dark mode',
+              onPressed: () => themeProvider.toggleTheme(),
+            ),
           ),
-        ),
-        child: ListView(
-          padding: const EdgeInsets.all(24),
-          children: [
-            const SizedBox(height: 8),
-
-            // About
-            _buildSettingsTile(
-              context: context,
-              icon: Icons.info_outline,
-              title: 'About',
-              subtitle: 'App version and information',
-              isLight: isLight,
-              onTap: () => _showAboutDialog(context, isLight),
+        ],
+      ),
+      bottomNavigationBar: const SharedBottomNavBar(currentIndex: 3),
+      body: GestureDetector(
+        onHorizontalDragEnd: (details) {
+          final v = details.primaryVelocity ?? 0;
+          if (v < -300) {
+            Navigator.pushReplacementNamed(context, '/home');
+          } else if (v > 300) {
+            Navigator.pushReplacementNamed(context, '/notifications');
+          }
+        },
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: RadialGradient(
+              radius: 1,
+              colors: AppColors.gradientColors(isLight),
             ),
-            const SizedBox(height: 12),
+          ),
+          child: ListView(
+            padding: const EdgeInsets.all(24),
+            children: [
+              const SizedBox(height: 8),
 
-            // Logout
-            _buildSettingsTile(
-              context: context,
-              icon: Icons.logout_rounded,
-              title: 'Log Out',
-              subtitle: 'Sign out of your account',
-              isLight: isLight,
-              iconColor: Colors.red,
-              titleColor: Colors.red,
-              onTap: () => _showLogoutDialog(context, isLight),
-            ),
-          ],
+              // About
+              _buildSettingsTile(
+                context: context,
+                icon: UniconsLine.info_circle,
+                title: 'About',
+                subtitle: 'App version and information',
+                isLight: isLight,
+                onTap: () => _showAboutDialog(context, isLight),
+              ),
+              const SizedBox(height: 12),
+
+              // Logout
+              _buildSettingsTile(
+                context: context,
+                icon: UniconsLine.sign_out_alt,
+                title: 'Log Out',
+                subtitle: 'Sign out of your account',
+                isLight: isLight,
+                iconColor: Colors.red,
+                titleColor: Colors.red,
+                onTap: () => _showLogoutDialog(context, isLight),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -113,7 +145,7 @@ class SettingsScreen extends StatelessWidget {
           ),
         ),
         trailing: Icon(
-          Icons.chevron_right,
+          UniconsLine.angle_right,
           color: AppColors.textSecondaryFor(isLight),
         ),
         onTap: onTap,
@@ -156,7 +188,7 @@ class SettingsScreen extends StatelessWidget {
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
-                  Icons.school_rounded,
+                  UniconsLine.graduation_cap,
                   color: AppColors.primary,
                   size: 30,
                 ),
@@ -260,7 +292,7 @@ class SettingsScreen extends StatelessWidget {
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
-                  Icons.logout_rounded,
+                  UniconsLine.sign_out_alt,
                   color: Colors.red,
                   size: 30,
                 ),

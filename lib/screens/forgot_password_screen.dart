@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../theme/app_colors.dart';
+import 'package:unicons/unicons.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -162,7 +163,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
         padding: const EdgeInsets.only(top: 10),
         child: IconButton(
           icon: Icon(
-            Icons.arrow_back,
+            UniconsLine.arrow_left,
             color: Theme.of(context).brightness == Brightness.dark
                 ? Colors.white
                 : Colors.black87,
@@ -282,7 +283,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
       controller: _emailController,
       enabled: !_isLoading,
       decoration: const InputDecoration(
-        prefixIcon: Icon(Icons.email_outlined),
+        prefixIcon: const Icon(UniconsLine.envelope),
         hintText: 'Email Address',
       ),
     );

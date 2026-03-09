@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
 import '../theme/app_colors.dart';
 import '../theme/theme_provider.dart';
+import 'package:unicons/unicons.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -118,7 +119,7 @@ class _HomeScreenState extends State<HomeScreen>
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
-                    Icons.logout_rounded,
+                    UniconsLine.sign_out_alt,
                     color: Colors.red,
                     size: 30,
                   ),
@@ -295,7 +296,7 @@ class _HomeScreenState extends State<HomeScreen>
             elevation: 0,
             shape: const CircleBorder(),
             child: const Icon(
-              Icons.assignment_outlined,
+              UniconsLine.clipboard_notes,
               color: Colors.black,
               size: 28,
             ),
@@ -314,8 +315,8 @@ class _HomeScreenState extends State<HomeScreen>
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
             _AnimatedNavItem(
-              outlinedIcon: Icons.person_outline,
-              filledIcon: Icons.person,
+              outlinedIcon: UniconsLine.user,
+              filledIcon: UniconsLine.user_circle,
               label: 'Profile',
               index: 0,
               isLight: isLight,
@@ -324,8 +325,8 @@ class _HomeScreenState extends State<HomeScreen>
               },
             ),
             _AnimatedNavItem(
-              outlinedIcon: Icons.chat_bubble_outline,
-              filledIcon: Icons.chat_bubble,
+              outlinedIcon: UniconsLine.comment_alt,
+              filledIcon: UniconsLine.comment_alt_dots,
               label: 'Chats',
               index: 1,
               isLight: isLight,
@@ -335,8 +336,8 @@ class _HomeScreenState extends State<HomeScreen>
             ),
             const SizedBox(width: 60), // gap for FAB
             _AnimatedNavItem(
-              outlinedIcon: Icons.notifications_outlined,
-              filledIcon: Icons.notifications,
+              outlinedIcon: UniconsLine.bell,
+              filledIcon: UniconsLine.bell,
               label: 'Alerts',
               index: 2,
               isLight: isLight,
@@ -345,8 +346,8 @@ class _HomeScreenState extends State<HomeScreen>
               },
             ),
             _AnimatedNavItem(
-              outlinedIcon: Icons.settings_outlined,
-              filledIcon: Icons.settings,
+              outlinedIcon: UniconsLine.setting,
+              filledIcon: UniconsLine.cog,
               label: 'Settings',
               index: 3,
               isLight: isLight,
@@ -358,166 +359,181 @@ class _HomeScreenState extends State<HomeScreen>
         ),
       ),
 
-      body: SafeArea(
-        child: Container(
-          decoration: _buildGradientDecoration(),
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 24.0,
-              vertical: 20.0,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // --- 2. Image Banner Placeholder ---
-                Container(
-                  width: double.infinity,
-                  height: 180,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(20),
-                    color: AppColors.surfaceFor(
-                      isLight,
-                    ), // Placeholder background color
-                    image: const DecorationImage(
-                      image: AssetImage('logos/banner.png'),
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 30),
-
-                // --- 3. Search Bar ---
-                TextField(
-                  controller: _searchController,
-                  style: TextStyle(color: AppColors.textPrimaryFor(isLight)),
-                  onSubmitted: (value) {
-                    if (value.isNotEmpty) {
-                      Navigator.pushNamed(
-                        context,
-                        '/ai_chatbot',
-                        arguments: {'initialQuery': value, 'autoSend': true},
-                      );
-                    }
-                  },
-                  decoration: InputDecoration(
-                    hintText: "What career is best for me?",
-                    hintStyle: TextStyle(
-                      color: AppColors.textSecondaryFor(isLight),
-                    ),
-                    suffixIcon: IconButton(
-                      icon: const Icon(Icons.search, color: AppColors.primary),
-                      onPressed: () {
-                        // Auto-send search query to AI chatbot
-                        if (_searchController.text.isNotEmpty) {
-                          Navigator.pushNamed(
-                            context,
-                            '/ai_chatbot',
-                            arguments: {
-                              'initialQuery': _searchController.text,
-                              'autoSend': true,
-                            },
-                          );
-                        }
-                      },
-                    ),
-                    filled: true,
-                    fillColor: isLight
-                        ? AppColors.light2.withOpacity(0.3)
-                        : Colors.black.withOpacity(
-                            0.2,
-                          ), // background for search
-                    contentPadding: const EdgeInsets.only(left: 15, right: 15),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(30),
-                      borderSide: const BorderSide(
-                        color: AppColors.primary,
-                        width: 1.5,
-                      ),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(30),
-                      borderSide: const BorderSide(
-                        color: AppColors.primary,
-                        width: 2,
+      body: GestureDetector(
+        onHorizontalDragEnd: (details) {
+          final v = details.primaryVelocity ?? 0;
+          if (v < -300)
+            Navigator.pushReplacementNamed(context, '/profile');
+          else if (v > 300)
+            Navigator.pushReplacementNamed(context, '/settings');
+        },
+        child: SafeArea(
+          child: Container(
+            decoration: _buildGradientDecoration(),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 24.0,
+                vertical: 20.0,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // --- 2. Image Banner Placeholder ---
+                  Container(
+                    width: double.infinity,
+                    height: 180,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(20),
+                      color: AppColors.surfaceFor(
+                        isLight,
+                      ), // Placeholder background color
+                      image: const DecorationImage(
+                        image: AssetImage('logos/banner.png'),
+                        fit: BoxFit.cover,
                       ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 15),
+                  const SizedBox(height: 30),
 
-                // --- 4. Clickable Search Suggestions ---
-                ..._searchSuggestions.map(
-                  (text) => Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: InkWell(
-                      onTap: () {
-                        // Auto-send suggestion directly to AI chat
+                  // --- 3. Search Bar ---
+                  TextField(
+                    controller: _searchController,
+                    style: TextStyle(color: AppColors.textPrimaryFor(isLight)),
+                    onSubmitted: (value) {
+                      if (value.isNotEmpty) {
                         Navigator.pushNamed(
                           context,
                           '/ai_chatbot',
-                          arguments: {'initialQuery': text, 'autoSend': true},
+                          arguments: {'initialQuery': value, 'autoSend': true},
                         );
-                      },
-                      child: Text(
-                        text,
-                        style: TextStyle(
-                          color: AppColors.textSecondaryFor(isLight),
-                          fontSize: 13,
-                          height: 1.4,
+                      }
+                    },
+                    decoration: InputDecoration(
+                      hintText: "What career is best for me?",
+                      hintStyle: TextStyle(
+                        color: AppColors.textSecondaryFor(isLight),
+                      ),
+                      suffixIcon: IconButton(
+                        icon: const Icon(
+                          UniconsLine.search,
+                          color: AppColors.primary,
+                        ),
+                        onPressed: () {
+                          // Auto-send search query to AI chatbot
+                          if (_searchController.text.isNotEmpty) {
+                            Navigator.pushNamed(
+                              context,
+                              '/ai_chatbot',
+                              arguments: {
+                                'initialQuery': _searchController.text,
+                                'autoSend': true,
+                              },
+                            );
+                          }
+                        },
+                      ),
+                      filled: true,
+                      fillColor: isLight
+                          ? AppColors.light2.withOpacity(0.3)
+                          : Colors.black.withOpacity(
+                              0.2,
+                            ), // background for search
+                      contentPadding: const EdgeInsets.only(
+                        left: 15,
+                        right: 15,
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(30),
+                        borderSide: const BorderSide(
+                          color: AppColors.primary,
+                          width: 1.5,
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(30),
+                        borderSide: const BorderSide(
+                          color: AppColors.primary,
+                          width: 2,
                         ),
                       ),
                     ),
                   ),
-                ),
+                  const SizedBox(height: 15),
 
-                const SizedBox(height: 8),
-
-                // --- 5. Professions Header ---
-                Text(
-                  "PROFESSIONS",
-                  style: TextStyle(
-                    color: AppColors.textPrimaryFor(isLight),
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 1,
+                  // --- 4. Clickable Search Suggestions ---
+                  ..._searchSuggestions.map(
+                    (text) => Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: InkWell(
+                        onTap: () {
+                          // Auto-send suggestion directly to AI chat
+                          Navigator.pushNamed(
+                            context,
+                            '/ai_chatbot',
+                            arguments: {'initialQuery': text, 'autoSend': true},
+                          );
+                        },
+                        child: Text(
+                          text,
+                          style: TextStyle(
+                            color: AppColors.textSecondaryFor(isLight),
+                            fontSize: 13,
+                            height: 1.4,
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
-                ),
-                const SizedBox(height: 20),
 
-                // --- 6. Scrollable Professions List ---
-                ListView.separated(
-                  physics:
-                      const NeverScrollableScrollPhysics(), // Scroll controlled by parent
-                  shrinkWrap: true,
-                  itemCount: _professions.length,
-                  separatorBuilder: (context, index) =>
-                      const SizedBox(height: 12),
-                  itemBuilder: (context, index) {
-                    return _AnimatedProfessionCard(
-                      title: _professions[index],
-                      imagePath: _professionImages[index],
-                      index: index,
-                      onTap: () => _onProfessionTap(_professions[index]),
-                    );
-                  },
-                ),
+                  const SizedBox(height: 8),
 
-                // Extra padding at bottom so floating button doesn't cover last item
-                const SizedBox(height: 100),
-
-                // Developed By text
-                Padding(
-                  padding: const EdgeInsets.only(
-                    left: 70,
-                    right: 24,
-                    bottom: 16,
+                  // --- 5. Professions Header ---
+                  Text(
+                    "PROFESSIONS",
+                    style: TextStyle(
+                      color: AppColors.textPrimaryFor(isLight),
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 1,
+                    ),
                   ),
-                  child: Text(
-                    "Developed By: Carl Dindo L. Cejas & Joshua Jhon Juariza",
-                    style: TextStyle(fontSize: 8, color: Colors.grey[600]),
+                  const SizedBox(height: 20),
+
+                  // --- 6. Scrollable Professions List ---
+                  ListView.separated(
+                    physics:
+                        const NeverScrollableScrollPhysics(), // Scroll controlled by parent
+                    shrinkWrap: true,
+                    itemCount: _professions.length,
+                    separatorBuilder: (context, index) =>
+                        const SizedBox(height: 12),
+                    itemBuilder: (context, index) {
+                      return _AnimatedProfessionCard(
+                        title: _professions[index],
+                        imagePath: _professionImages[index],
+                        index: index,
+                        onTap: () => _onProfessionTap(_professions[index]),
+                      );
+                    },
                   ),
-                ),
-              ],
+
+                  // Extra padding at bottom so floating button doesn't cover last item
+                  const SizedBox(height: 100),
+
+                  // Developed By text
+                  Padding(
+                    padding: const EdgeInsets.only(
+                      left: 70,
+                      right: 24,
+                      bottom: 16,
+                    ),
+                    child: Text(
+                      "Developed By: Carl Dindo L. Cejas & Joshua Jhon Juariza",
+                      style: TextStyle(fontSize: 8, color: Colors.grey[600]),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -548,7 +564,7 @@ class _HomeScreenState extends State<HomeScreen>
             icon: Consumer<ThemeProvider>(
               builder: (context, themeProvider, _) {
                 return Icon(
-                  themeProvider.isDarkMode ? Icons.light_mode : Icons.dark_mode,
+                  themeProvider.isDarkMode ? UniconsLine.sun : UniconsLine.moon,
                   color: themeProvider.isDarkMode
                       ? Colors.white
                       : Colors.black87,

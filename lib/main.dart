@@ -54,25 +54,59 @@ class MyApp extends StatelessWidget {
             '/forgot_password': (context) => const ForgotPasswordScreen(),
             '/profile_completion': (context) => const ProfileCompletionScreen(),
             '/home': (context) => const HomeScreen(),
-            '/profile': (context) => const ProfileScreen(),
-            '/chat_history': (context) => const ChatHistoryScreen(),
-            '/notifications': (context) => const NotificationsScreen(),
-            '/settings': (context) => const SettingsScreen(),
-            '/riasec_test': (context) => const RiasecTestScreen(),
-            '/ai_chatbot': (context) {
-              final args = ModalRoute.of(context)?.settings.arguments as Map?;
-              return AiChatbotScreen(
-                profession: args?['profession'] as String?,
-                initialQuery: args?['initialQuery'] as String?,
-                backgroundPrompt: args?['backgroundPrompt'] as String?,
-                autoSend: args?['autoSend'] as bool? ?? false,
-              );
-            },
-            '/riasec_results': (context) {
-              final args =
-                  ModalRoute.of(context)?.settings.arguments as List<int>?;
-              return RiasecResultsScreen(answers: args);
-            },
+          },
+          // Tab routes use zoom-scale; detail routes use slide-up.
+          onGenerateRoute: (settings) {
+            switch (settings.name) {
+              case '/riasec_test':
+                return SlideUpPageRoute(
+                  settings: settings,
+                  builder: (_) => const RiasecTestScreen(),
+                );
+              case '/ai_chatbot':
+                return SlideUpPageRoute(
+                  settings: settings,
+                  builder: (_) {
+                    final args = settings.arguments as Map?;
+                    return AiChatbotScreen(
+                      profession: args?['profession'] as String?,
+                      initialQuery: args?['initialQuery'] as String?,
+                      backgroundPrompt: args?['backgroundPrompt'] as String?,
+                      autoSend: args?['autoSend'] as bool? ?? false,
+                    );
+                  },
+                );
+              case '/riasec_results':
+                return SlideUpPageRoute(
+                  settings: settings,
+                  builder: (_) {
+                    final args = settings.arguments as List<int>?;
+                    return RiasecResultsScreen(answers: args);
+                  },
+                );
+              case '/profile':
+                return ZoomPageRoute(
+                  settings: settings,
+                  builder: (_) => const ProfileScreen(),
+                );
+              case '/chat_history':
+                return ZoomPageRoute(
+                  settings: settings,
+                  builder: (_) => const ChatHistoryScreen(),
+                );
+              case '/notifications':
+                return ZoomPageRoute(
+                  settings: settings,
+                  builder: (_) => const NotificationsScreen(),
+                );
+              case '/settings':
+                return ZoomPageRoute(
+                  settings: settings,
+                  builder: (_) => const SettingsScreen(),
+                );
+              default:
+                return null;
+            }
           },
         );
       },
@@ -179,4 +213,57 @@ class MyApp extends StatelessWidget {
       ),
     );
   }
+}
+
+/// A [PageRoute] that zooms and fades the incoming screen in from the center,
+/// giving a smooth, app-native feel when switching between tabs.
+class ZoomPageRoute<T> extends PageRouteBuilder<T> {
+  ZoomPageRoute({required WidgetBuilder builder, super.settings})
+    : super(
+        transitionDuration: const Duration(milliseconds: 310),
+        reverseTransitionDuration: const Duration(milliseconds: 260),
+        pageBuilder: (context, animation, secondaryAnimation) =>
+            builder(context),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          final curved = CurvedAnimation(
+            parent: animation,
+            curve: Curves.easeInOutCubic,
+          );
+          return ScaleTransition(
+            scale: Tween<double>(begin: 0.86, end: 1.0).animate(curved),
+            child: FadeTransition(
+              opacity: Tween<double>(begin: 0.0, end: 1.0).animate(curved),
+              child: child,
+            ),
+          );
+        },
+      );
+}
+
+/// A [PageRoute] that slides the incoming screen up from the bottom — used
+/// for detail/action screens like the AI chatbot and RIASEC test.
+class SlideUpPageRoute<T> extends PageRouteBuilder<T> {
+  SlideUpPageRoute({required WidgetBuilder builder, super.settings})
+    : super(
+        transitionDuration: const Duration(milliseconds: 350),
+        reverseTransitionDuration: const Duration(milliseconds: 280),
+        pageBuilder: (context, animation, secondaryAnimation) =>
+            builder(context),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          final curved = CurvedAnimation(
+            parent: animation,
+            curve: Curves.easeOutCubic,
+          );
+          return SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(0, 0.08),
+              end: Offset.zero,
+            ).animate(curved),
+            child: FadeTransition(
+              opacity: Tween<double>(begin: 0.0, end: 1.0).animate(curved),
+              child: child,
+            ),
+          );
+        },
+      );
 }

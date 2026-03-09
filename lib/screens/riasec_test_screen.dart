@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
+import 'package:unicons/unicons.dart';
 
 class RiasecTestScreen extends StatefulWidget {
   const RiasecTestScreen({super.key});
@@ -75,7 +76,7 @@ class _RiasecTestScreenState extends State<RiasecTestScreen> {
         elevation: 0,
         leading: IconButton(
           icon: Icon(
-            Icons.arrow_back,
+            UniconsLine.arrow_left,
             color: AppColors.textPrimaryFor(isLight),
           ),
           onPressed: () => Navigator.pop(context),
@@ -205,7 +206,7 @@ class _RiasecTestScreenState extends State<RiasecTestScreen> {
                                   });
                                 }
                               : null,
-                          icon: const Icon(Icons.chevron_left),
+                          icon: const Icon(UniconsLine.angle_left),
                           label: const Text("Previous"),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.primary,
@@ -240,8 +241,8 @@ class _RiasecTestScreenState extends State<RiasecTestScreen> {
                           ),
                           icon: Icon(
                             _currentQuestionIndex < 49
-                                ? Icons.chevron_right
-                                : Icons.check,
+                                ? UniconsLine.angle_right
+                                : UniconsLine.check,
                           ),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.primary,

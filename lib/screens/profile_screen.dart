@@ -1,7 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:lottie/lottie.dart';
 import '../theme/app_colors.dart';
+import '../widgets/shared_bottom_nav.dart';
+import 'package:provider/provider.dart';
+import '../theme/theme_provider.dart';
+import 'package:unicons/unicons.dart';
+import '../widgets/skeleton_loaders.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -173,15 +179,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final isLight = Theme.of(context).brightness == Brightness.light;
     return Scaffold(
       backgroundColor: AppColors.backgroundFor(isLight),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      floatingActionButton: const SharedEvaluateFab(),
       appBar: AppBar(
         backgroundColor: isLight ? AppColors.light2 : Colors.transparent,
         elevation: 0,
         leading: IconButton(
           icon: Icon(
-            Icons.arrow_back,
+            UniconsLine.home_alt,
             color: AppColors.textPrimaryFor(isLight),
           ),
-          onPressed: () => Navigator.pop(context),
+          tooltip: 'Home',
+          onPressed: () => Navigator.pushReplacementNamed(context, '/home'),
         ),
         title: Text(
           'My Profile',
@@ -192,168 +201,201 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         ),
         centerTitle: true,
-      ),
-      body: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(color: AppColors.primary),
-            )
-          : Container(
-              decoration: BoxDecoration(
-                gradient: RadialGradient(
-                  radius: 1,
-                  colors: AppColors.gradientColors(isLight),
-                ),
+        actions: [
+          Consumer<ThemeProvider>(
+            builder: (context, tp, _) => IconButton(
+              icon: Icon(
+                tp.isDarkMode ? UniconsLine.sun : UniconsLine.moon,
+                color: AppColors.textPrimaryFor(isLight),
               ),
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  children: [
-                    // Avatar
-                    CircleAvatar(
-                      radius: 48,
-                      backgroundColor: AppColors.primary.withOpacity(0.15),
-                      child: Icon(
-                        Icons.person,
-                        size: 48,
-                        color: AppColors.primary,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    if (_email != null)
-                      Text(
-                        _email!,
-                        style: TextStyle(
-                          color: AppColors.textSecondaryFor(isLight),
-                          fontSize: 13,
-                        ),
-                      ),
-                    const SizedBox(height: 24),
-
-                    // Error message
-                    if (_errorMessage != null) ...[
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Colors.red.withOpacity(0.1),
-                          border: Border.all(
-                            color: Colors.red.withOpacity(0.5),
-                          ),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          _errorMessage!,
-                          style: const TextStyle(
-                            color: Colors.red,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                    ],
-
-                    // Form fields
-                    _buildField(
-                      'First Name',
-                      _firstNameController,
-                      Icons.person_outline,
-                    ),
-                    const SizedBox(height: 12),
-                    _buildField(
-                      'Middle Name',
-                      _middleNameController,
-                      Icons.person_outline,
-                    ),
-                    const SizedBox(height: 12),
-                    _buildField(
-                      'Last Name',
-                      _lastNameController,
-                      Icons.person_outline,
-                    ),
-                    const SizedBox(height: 12),
-
-                    // Birthday
-                    TextFormField(
-                      controller: _birthdayController,
-                      readOnly: true,
-                      style: TextStyle(
-                        color: AppColors.textPrimaryFor(isLight),
-                      ),
-                      decoration: InputDecoration(
-                        prefixIcon: const Icon(Icons.calendar_today_outlined),
-                        hintText: 'Birthday',
-                        suffixIcon: IconButton(
-                          icon: const Icon(Icons.date_range),
-                          onPressed: () => _selectDate(context),
-                        ),
-                      ),
-                      onTap: () => _selectDate(context),
-                    ),
-                    const SizedBox(height: 12),
-
-                    // Sex dropdown
-                    _buildDropdown(
-                      value: _selectedSex,
-                      hint: 'Sex',
-                      icon: Icons.wc,
-                      items: _sexOptions,
-                      onChanged: (v) => setState(() => _selectedSex = v),
-                      isLight: isLight,
-                    ),
-                    const SizedBox(height: 12),
-
-                    _buildField(
-                      'Address',
-                      _addressController,
-                      Icons.location_on_outlined,
-                    ),
-                    const SizedBox(height: 12),
-
-                    // Grade level dropdown
-                    _buildDropdown(
-                      value: _selectedGradeLevel,
-                      hint: 'Grade Level',
-                      icon: Icons.school_outlined,
-                      items: _gradeLevels,
-                      onChanged: (v) => setState(() => _selectedGradeLevel = v),
-                      isLight: isLight,
-                    ),
-                    const SizedBox(height: 28),
-
-                    // Save button
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: _isSaving ? null : _saveProfile,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          foregroundColor: Colors.black,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        child: _isSaving
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.black,
-                                ),
-                              )
-                            : const Text(
-                                'Save Changes',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 16,
-                                ),
-                              ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+              onPressed: () => Provider.of<ThemeProvider>(
+                context,
+                listen: false,
+              ).toggleTheme(),
+              tooltip: 'Toggle Theme',
             ),
+          ),
+        ],
+      ),
+      bottomNavigationBar: const SharedBottomNavBar(currentIndex: 0),
+      body: GestureDetector(
+        onHorizontalDragEnd: (details) {
+          final v = details.primaryVelocity ?? 0;
+          if (v < -300) {
+            Navigator.pushReplacementNamed(context, '/chat_history');
+          } else if (v > 300) {
+            Navigator.pushReplacementNamed(context, '/home');
+          }
+        },
+        child: _isLoading
+            ? Container(
+                decoration: BoxDecoration(
+                  gradient: RadialGradient(
+                    radius: 1,
+                    colors: AppColors.gradientColors(isLight),
+                  ),
+                ),
+                child: const ProfileSkeletonLoader(),
+              )
+            : Container(
+                decoration: BoxDecoration(
+                  gradient: RadialGradient(
+                    radius: 1,
+                    colors: AppColors.gradientColors(isLight),
+                  ),
+                ),
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    children: [
+                      // Avatar
+                      CircleAvatar(
+                        radius: 48,
+                        backgroundColor: AppColors.primary.withOpacity(0.15),
+                        child: Icon(
+                          Icons.person,
+                          size: 48,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      if (_email != null)
+                        Text(
+                          _email!,
+                          style: TextStyle(
+                            color: AppColors.textSecondaryFor(isLight),
+                            fontSize: 13,
+                          ),
+                        ),
+                      const SizedBox(height: 24),
+
+                      // Error message
+                      if (_errorMessage != null) ...[
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.red.withOpacity(0.1),
+                            border: Border.all(
+                              color: Colors.red.withOpacity(0.5),
+                            ),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            _errorMessage!,
+                            style: const TextStyle(
+                              color: Colors.red,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                      ],
+
+                      // Form fields
+                      _buildField(
+                        'First Name',
+                        _firstNameController,
+                        Icons.person_outline,
+                      ),
+                      const SizedBox(height: 12),
+                      _buildField(
+                        'Middle Name',
+                        _middleNameController,
+                        Icons.person_outline,
+                      ),
+                      const SizedBox(height: 12),
+                      _buildField(
+                        'Last Name',
+                        _lastNameController,
+                        Icons.person_outline,
+                      ),
+                      const SizedBox(height: 12),
+
+                      // Birthday
+                      TextFormField(
+                        controller: _birthdayController,
+                        readOnly: true,
+                        style: TextStyle(
+                          color: AppColors.textPrimaryFor(isLight),
+                        ),
+                        decoration: InputDecoration(
+                          prefixIcon: const Icon(Icons.calendar_today_outlined),
+                          hintText: 'Birthday',
+                          suffixIcon: IconButton(
+                            icon: const Icon(Icons.date_range),
+                            onPressed: () => _selectDate(context),
+                          ),
+                        ),
+                        onTap: () => _selectDate(context),
+                      ),
+                      const SizedBox(height: 12),
+
+                      // Sex dropdown
+                      _buildDropdown(
+                        value: _selectedSex,
+                        hint: 'Sex',
+                        icon: Icons.wc,
+                        items: _sexOptions,
+                        onChanged: (v) => setState(() => _selectedSex = v),
+                        isLight: isLight,
+                      ),
+                      const SizedBox(height: 12),
+
+                      _buildField(
+                        'Address',
+                        _addressController,
+                        Icons.location_on_outlined,
+                      ),
+                      const SizedBox(height: 12),
+
+                      // Grade level dropdown
+                      _buildDropdown(
+                        value: _selectedGradeLevel,
+                        hint: 'Grade Level',
+                        icon: Icons.school_outlined,
+                        items: _gradeLevels,
+                        onChanged: (v) =>
+                            setState(() => _selectedGradeLevel = v),
+                        isLight: isLight,
+                      ),
+                      const SizedBox(height: 28),
+
+                      // Save button
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: _isSaving ? null : _saveProfile,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            foregroundColor: Colors.black,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: _isSaving
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.black,
+                                  ),
+                                )
+                              : const Text(
+                                  'Save Changes',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+      ),
     );
   }
 

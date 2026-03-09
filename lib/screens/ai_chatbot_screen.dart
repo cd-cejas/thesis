@@ -5,6 +5,8 @@ import 'package:provider/provider.dart';
 import '../deepseek_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/theme_provider.dart';
+import 'package:unicons/unicons.dart';
+import 'package:lottie/lottie.dart';
 
 class AiChatbotScreen extends StatefulWidget {
   final String? profession;
@@ -249,7 +251,7 @@ class _AiChatbotScreenState extends State<AiChatbotScreen> {
         elevation: 0,
         leading: IconButton(
           icon: Icon(
-            Icons.arrow_back,
+            UniconsLine.arrow_left,
             color: AppColors.textPrimaryFor(isLight),
           ),
           onPressed: () => Navigator.pop(context),
@@ -269,7 +271,7 @@ class _AiChatbotScreenState extends State<AiChatbotScreen> {
             padding: const EdgeInsets.only(right: 8),
             child: IconButton(
               icon: Icon(
-                isLight ? Icons.dark_mode : Icons.light_mode,
+                isLight ? UniconsLine.moon : UniconsLine.sun,
                 color: AppColors.textPrimaryFor(isLight),
               ),
               onPressed: () {
@@ -330,15 +332,11 @@ class _AiChatbotScreenState extends State<AiChatbotScreen> {
                         color: AppColors.primary.withOpacity(0.2),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: const SizedBox(
-                        width: 24,
-                        height: 24,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            AppColors.primary,
-                          ),
-                        ),
+                      child: Lottie.asset(
+                        'assets/lottie/typing_dots.json',
+                        width: 60,
+                        height: 32,
+                        fit: BoxFit.contain,
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -415,7 +413,7 @@ class _AiChatbotScreenState extends State<AiChatbotScreen> {
                     backgroundColor: AppColors.primary,
                     foregroundColor: Colors.black,
                     onPressed: _isLoading ? null : _sendMessage,
-                    child: const Icon(Icons.send),
+                    child: const Icon(UniconsLine.message),
                   ),
                 ],
               ),

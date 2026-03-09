@@ -7,6 +7,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import '../otp_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/social_buttons.dart';
+import 'package:unicons/unicons.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -390,7 +391,7 @@ class _SignupScreenState extends State<SignupScreen>
         padding: const EdgeInsets.only(top: 10),
         child: IconButton(
           icon: Icon(
-            Icons.arrow_back,
+            UniconsLine.arrow_left,
             color: Theme.of(context).brightness == Brightness.dark
                 ? Colors.white
                 : Colors.black87,
@@ -520,7 +521,7 @@ class _SignupScreenState extends State<SignupScreen>
         return null;
       },
       decoration: const InputDecoration(
-        prefixIcon: Icon(Icons.email_outlined),
+        prefixIcon: const Icon(UniconsLine.envelope),
         hintText: 'Email Address',
       ),
     );
@@ -541,7 +542,7 @@ class _SignupScreenState extends State<SignupScreen>
         return null;
       },
       decoration: InputDecoration(
-        prefixIcon: const Icon(Icons.lock_outline),
+        prefixIcon: const Icon(UniconsLine.lock),
         hintText: 'Password',
         suffixIcon: _buildVisibilityToggle(),
       ),
@@ -563,7 +564,7 @@ class _SignupScreenState extends State<SignupScreen>
         return null;
       },
       decoration: InputDecoration(
-        prefixIcon: const Icon(Icons.lock_outline),
+        prefixIcon: const Icon(UniconsLine.lock),
         hintText: 'Confirm Password',
         suffixIcon: _buildVisibilityToggle(),
       ),
@@ -574,7 +575,7 @@ class _SignupScreenState extends State<SignupScreen>
     final isLight = Theme.of(context).brightness == Brightness.light;
     return IconButton(
       icon: Icon(
-        _isObscure ? Icons.visibility_off : Icons.visibility,
+        _isObscure ? UniconsLine.eye_slash : UniconsLine.eye,
         color: AppColors.iconColor(isLight),
       ),
       onPressed: () => setState(() => _isObscure = !_isObscure),
